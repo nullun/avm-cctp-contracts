@@ -94,20 +94,11 @@ class MessageTransmitter extends Contract {
 	// ===== MessageTransmitter =====
 	/**
 	 * Reserve and increment next available nonce
-	 * @dev Creates a new usedNonces box if box doesn't exist
 	 * @return nonce reserved
 	 */
 	private _reserveAndIncrementNonce(): uint<64> {
 		const _nonceReserved: uint<64> = this.nextAvailableNonce.value;
 		this.nextAvailableNonce.value = this.nextAvailableNonce.value + 1;
-
-		const box: SourceDomainNonceBox = {
-			sourceDomain: this.localDomain.value,
-			boxNumber: _nonceReserved / 262144,
-		};
-		if (!this.usedNonces(box).exists) {
-			this.usedNonces(box).create(32768);
-		}
 
 		return _nonceReserved;
 	}
@@ -423,15 +414,20 @@ class MessageTransmitter extends Contract {
 	    // Validate version
 		assert(message._msgVersion === this.version.value);
 
-	    // Validate nonce is available
+		// If SourceDomainNonceBox doesn't exist, create it
 		const boxNumber: uint<64> = message._msgNonce / 262144;
-		const offset: uint<64> = message._msgNonce / 8;
-		const flagPosition: uint<64> = message._msgNonce % 8;
 		const box: SourceDomainNonceBox = {
 			sourceDomain: message._msgSourceDomain,
-			boxNumber: boxNumber,
+			boxNumber: boxNumber
 		};
-		const nonceByte: bytes = this.usedNonces(box).extract(offset, 1);
+		if (!this.usedNonces(box).exists) {
+			this.usedNonces(box).create(32768);
+		}
+
+		// Validate nonce is available
+		const offset: uint<64> = message._msgNonce / 8;
+		const flagPosition: uint<64> = message._msgNonce % 8;
+		const nonceByte: bytes = this.usedNonces(box).extract(offset, 1) as bytes;
 		const nonceUsed: boolean = getbit(nonceByte, flagPosition) as boolean;
 		assert(!nonceUsed);
 
@@ -463,7 +459,7 @@ class MessageTransmitter extends Contract {
 	 * to avoid impacting users who rely on large messages.
 	 * @param newMaxMessageBodySize new max message body size, in bytes
 	 */
-	function setMaxMessageBodySize(
+	setMaxMessageBodySize(
 		newMaxMessageBodySize: uint<64>
 	): void {
 		this.onlyOwner();
