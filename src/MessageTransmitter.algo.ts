@@ -397,9 +397,6 @@ class MessageTransmitter extends Contract {
 	    // TODO: Validate each signature in the attestation
 	    // this._verifyAttestationSignatures(message, attestation);
 
-		// replace _msg with message
-	    // bytes29 _msg = message.ref(0);
-
 	    // Validate message format
 	    this._validateMessageFormat(message);
 
@@ -448,7 +445,15 @@ class MessageTransmitter extends Contract {
 		// TODO: If the itxn fails, the whole thing fails, so no need to check?
 		assert(handled);
 
-	    // TODO: Emit Event MessageReceived(this.txn.sender, message._msgSourceDomain, message._msgNonce, message._msgSender, message._msgRawBody);
+		/*
+	    // TODO: Emit Event MessageReceived(
+			this.txn.sender,
+			message._msgSourceDomain,
+			message._msgNonce,
+			message._msgSender,
+			message._msgRawBody
+		);
+		*/
 
 	    return true;
 	}
