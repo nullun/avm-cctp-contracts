@@ -5,6 +5,17 @@ type SourceDomainNonceBox = {
 	boxNumber: uint<64>;
 };
 
+type Message = {
+	_msgVersion: uint<32>,
+	_msgSourceDomain: uint<32>,
+	_msgDestinationDomain: uint<32>,
+	_msgNonce: uint<64>,
+	_msgSender: byte[32],
+	_msgRecipient: byte[32],
+	_msgDestinationCaller: byte[32],
+	_msgRawBody: bytes
+};
+
 class MessageTransmitter extends Contract {
 
 	// ============ State Variables ============
@@ -33,7 +44,7 @@ class MessageTransmitter extends Contract {
 
     // Maximum size of message body, in bytes.
     // This value is set by owner.
-	maxMessageBodySize = GlobalStateKey<uint<256>>();
+	maxMessageBodySize = GlobalStateKey<uint<64>>();
 
     // Next available nonce from this source domain
 	nextAvailableNonce = GlobalStateKey<uint<64>>();
@@ -76,6 +87,63 @@ class MessageTransmitter extends Contract {
 	 */
 	private _setAttesterManager(_newAttesterManager: Address): void {
 		this.attesterManager.value = _newAttesterManager;
+	}
+
+	/**
+	 * Reserve and increment next available nonce
+	 * @dev Creates a new usedNonces box if box doesn't exist
+	 * @return nonce reserved
+	 */
+	private _reserveAndIncrementNonce(): uint<64> {
+		const _nonceReserved: uint<64> = this.nextAvailableNonce.value;
+		this.nextAvailableNonce.value = this.nextAvailableNonce.value + 1;
+
+		const box: SourceDomainNonceBox = {
+			sourceDomain: this.localDomain.value,
+			boxNumber: _nonceReserved / 262144,
+		};
+		if (!this.usedNonces(box).exists) {
+			this.usedNonces(box).create(32768);
+		}
+
+		return _nonceReserved;
+	}
+
+	/**
+	 * @notice Send the message to the destination domain and recipient. If `_destinationCaller` is not equal to bytes32(0),
+	 * the message can only be received on the destination chain when called by `_destinationCaller`.
+	 * @dev Format the message and emit `MessageSent` event with message information.
+	 * @param _destinationDomain Domain of destination chain
+	 * @param _recipient Address of message recipient on destination domain as bytes32
+	 * @param _destinationCaller caller on the destination domain, as bytes32
+	 * @param _sender message sender, as bytes32
+	 * @param _nonce nonce reserved for message
+	 * @param _messageBody Raw bytes content of message
+	 */
+	private _sendMessage(
+		_destinationDomain: uint<32>,
+		_recipient: byte[32],
+		_destinationCaller: byte[32],
+		_sender: byte[32],
+		_nonce: uint<64>,
+		_messageBody: bytes
+	): void {
+		assert(_messageBody.length <= this.maxMessageBodySize.value);
+		assert(_recipient != globals.zeroAddress as unknown as byte[32]);
+
+		// serialize message
+		const _message: Message = {
+			_msgVersion: this.version.value,
+			_msgSourceDomain: this.localDomain.value,
+			_msgDestinationDomain: _destinationDomain,
+			_msgNonce: _nonce,
+			_msgSender: _sender,
+			_msgRecipient: _recipient,
+			_msgDestinationCaller: _destinationCaller,
+			_msgRawBody: _messageBody
+		};
+
+		// TODO: Emit Event MessageSent(_message);
 	}
 
 
@@ -151,20 +219,40 @@ class MessageTransmitter extends Contract {
 		this.onlyAttesterManager();
 
 		assert(newSignatureThreshold);
-
-		// New signature threshold cannot exceed the number of enabled attesters
 		assert(newSignatureThreshold <= this.numAttesters.value);
-
 		assert(newSignatureThreshold != this.signatureThreshold.value);
 
+		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
 		this.signatureThreshold.value = newSignatureThreshold;
+		// TODO: Emit Event SignatureThresholdUpdated(_oldSignatureThreshold, signatureThreshold);
 	}
 
 	/**
-	 * @return nonce  reserved by message
+	 * @notice Send the message to the destination domain and recipient
+	 * @dev Increment nonce, format the message, and emit `MessageSent` event with message information.
+	 * @param destinationDomain Domain of destination chain
+	 * @param recipient Address of message recipient on destination chain as bytes32
+	 * @param messageBody Raw bytes content of message
+	 * @return nonce reserved by message
 	 */
-	sendMessage(): uint<64> {
-		return 42;
+	sendMessage(
+		destinationDomain: uint<32>,
+		recipient: byte[32],
+		messageBody: bytes
+	): uint<64> {
+		const _nonce: uint<64> = this._reserveAndIncrementNonce();
+		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
+
+		this._sendMessage(
+		    destinationDomain,
+		    recipient,
+		    globals.zeroAddress as unknown as byte[32],
+		    _messageSender,
+		    _nonce,
+		    messageBody
+		);
+
+		return _nonce;
 	}
 
 	replaceMessage(): void {}
@@ -185,21 +273,13 @@ class MessageTransmitter extends Contract {
 
 	setMaxMessageBodySize(): void {}
 
-	// ===== Internal Utils =====
-
-	/**
-	 * @notice Send the message to the destination domain and recipient. If `_destinationCaller` is not equal to bytes32(0),
-     * the message can only be received on the destination chain when called by `_destinationCaller`.
-	 */
-	private _sendMessage(): void {}
-
 
 	// ============ Constructor ============
 	@allow.create('NoOp')
 	deploy(
 		_localDomain: uint<32>,
 		_attester: Address,
-		_maxMessageBodySize: uint<256>,
+		_maxMessageBodySize: uint<64>,
 		_version: uint<32>
 	): void {
 		this.localDomain.value = _localDomain;
