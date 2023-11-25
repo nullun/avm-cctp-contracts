@@ -71,6 +71,7 @@ class MessageTransmitter extends Contract {
 
 
 	// ============ Internal Utils ============
+	// ===== Ownable =====
 	/**
 	 * @dev Transfers ownership of the application to a new account (`newOwner`).
 	 * Internal function without access restriction.
@@ -81,6 +82,7 @@ class MessageTransmitter extends Contract {
 		// TODO: Emit Event OwnershipTransferred(oldOwner, newOwner);
 	}
 
+	// ===== Attestable =====
 	/**
 	 * @dev Sets a new attester manager address
 	 * @param _newAttesterManager attester manager address to set
@@ -89,6 +91,7 @@ class MessageTransmitter extends Contract {
 		this.attesterManager.value = _newAttesterManager;
 	}
 
+	// ===== MessageTransmitter =====
 	/**
 	 * Reserve and increment next available nonce
 	 * @dev Creates a new usedNonces box if box doesn't exist
@@ -144,6 +147,30 @@ class MessageTransmitter extends Contract {
 		};
 
 		// TODO: Emit Event MessageSent(_message);
+	}
+
+	/**
+	 * @dev The message body is dynamically-sized to support custom message body
+	 * formats. Other fields must be fixed-size to avoid hash collisions.
+	 * Each other input value has an explicit type to guarantee fixed-size.
+	 * Padding: uintNN fields are left-padded, and bytesNN fields are right-padded.
+	 *
+	 * Field                 Bytes      Type       Index
+	 * version               4          uint32     0
+	 * sourceDomain          4          uint32     4
+	 * destinationDomain     4          uint32     8
+	 * nonce                 8          uint64     12
+	 * sender                32         bytes32    20
+	 * recipient             32         bytes32    52
+	 * destinationCaller     32         bytes32    84
+	 * messageBody           dynamic    bytes      116
+	 *
+	 * @notice Reverts if message is incorrect length
+	 * @param _message The message
+	 */
+	private _validateMessageFormat(_message: Message): void {
+		// FIX: Get length of Message? Or can we remove this, since it's a Message type and is already validated
+		//assert(_message as bytes.length >= 116);
 	}
 
 
@@ -227,6 +254,7 @@ class MessageTransmitter extends Contract {
 		// TODO: Emit Event SignatureThresholdUpdated(_oldSignatureThreshold, signatureThreshold);
 	}
 
+	// ===== MessageTransmitter =====
 	/**
 	 * @notice Send the message to the destination domain and recipient
 	 * @dev Increment nonce, format the message, and emit `MessageSent` event with message information.
@@ -240,6 +268,7 @@ class MessageTransmitter extends Contract {
 		recipient: byte[32],
 		messageBody: bytes
 	): uint<64> {
+		// TODO: WhenNotPaused
 		const _nonce: uint<64> = this._reserveAndIncrementNonce();
 		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
 
@@ -255,23 +284,193 @@ class MessageTransmitter extends Contract {
 		return _nonce;
 	}
 
-	replaceMessage(): void {}
-
 	/**
-	 * @return nonce  reserved by message
+	 * @notice Replace a message with a new message body and/or destination caller.
+	 * @dev The `originalAttestation` must be a valid attestation of `originalMessage`.
+	 * Reverts if msg.sender does not match sender of original message, or if the source domain of the original message
+	 * does not match this MessageTransmitter's local domain.
+	 * @param originalMessage original message to replace
+	 * @param originalAttestation attestation of `originalMessage`
+	 * @param newMessageBody new message body of replaced message
+	 * @param newDestinationCaller the new destination caller, which may be the
+	 * same as the original destination caller, a new destination caller, or an empty
+	 * destination caller (bytes32(0), indicating that any destination caller is valid.)
 	 */
-	sendMessageWithCaller(): uint<64> {
-		return 42;
+	replaceMessage(
+		originalMessage: Message,
+		originalAttestation: bytes,
+		newMessageBody: bytes,
+		newDestinationCaller: byte[32]
+	): void {
+		// TODO: WhenNotPaused
+		// TODO: Validate each signature in the attestation
+		// this._verifyAttestationSignatures(originalMessage, originalAttestation);
+
+		// Validate message format
+		this._validateMessageFormat(originalMessage);
+
+		// Validate message sender
+		const _sender: byte[32] = originalMessage._msgSender;
+		assert(this.txn.sender as unknown as byte[32] === _sender);
+
+		// Validate source domain
+		const _sourceDomain: uint<32> = originalMessage._msgSourceDomain;
+		assert(_sourceDomain === this.localDomain.value);
+
+		const _destinationDomain: uint<32> = originalMessage._msgDestinationDomain;
+		const _recipient: byte[32] = originalMessage._msgRecipient;
+		const _nonce: uint<64> = originalMessage._msgNonce;
+
+		this._sendMessage(
+		    _destinationDomain,
+		    _recipient,
+		    newDestinationCaller,
+		    _sender,
+		    _nonce,
+		    newMessageBody
+		);
 	}
 
 	/**
+	 * @notice Send the message to the destination domain and recipient, for a specified `destinationCaller` on the
+	 * destination domain.
+	 * @dev Increment nonce, format the message, and emit `MessageSent` event with message information.
+	 * WARNING: if the `destinationCaller` does not represent a valid address, then it will not be possible
+	 * to broadcast the message on the destination domain. This is an advanced feature, and the standard
+	 * sendMessage() should be preferred for use cases where a specific destination caller is not required.
+	 * @param destinationDomain Domain of destination chain
+	 * @param recipient Address of message recipient on destination domain as bytes32
+	 * @param destinationCaller caller on the destination domain, as bytes32
+	 * @param messageBody Raw bytes content of message
+	 * @return nonce reserved by message
+	 */
+	sendMessageWithCaller(
+		destinationDomain: uint<32>,
+		recipient: byte[32],
+		destinationCaller: byte[32],
+		messageBody: bytes
+	): uint<64> {
+		// TODO: WhenNotPaused
+		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
+
+	    const _nonce: uint<64> = this._reserveAndIncrementNonce();
+	    const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
+
+	    this._sendMessage(
+	        destinationDomain,
+	        recipient,
+	        destinationCaller,
+	        _messageSender,
+	        _nonce,
+	        messageBody
+	    );
+
+	    return _nonce;
+	}
+
+	/**
+	 * @notice Receive a message. Messages with a given nonce
+	 * can only be broadcast once for a (sourceDomain, destinationDomain)
+	 * pair. The message body of a valid message is passed to the
+	 * specified recipient for further processing.
+	 *
+	 * @dev Attestation format:
+	 * A valid attestation is the concatenated 65-byte signature(s) of exactly
+	 * `thresholdSignature` signatures, in increasing order of attester address.
+	 * ***If the attester addresses recovered from signatures are not in
+	 * increasing order, signature verification will fail.***
+	 * If incorrect number of signatures or duplicate signatures are supplied,
+	 * signature verification will fail.
+	 *
+	 * Message format:
+	 * Field                 Bytes      Type       Index
+	 * version               4          uint32     0
+	 * sourceDomain          4          uint32     4
+	 * destinationDomain     4          uint32     8
+	 * nonce                 8          uint64     12
+	 * sender                32         bytes32    20
+	 * recipient             32         bytes32    52
+	 * destinationCaller     32         bytes32    84
+	 * messageBody           dynamic    bytes      116
+	 *
+	 * @param message Message bytes
+	 * @param attestation Concatenated 65-byte signature(s) of `message`, in increasing order
+	 * of the attester address recovered from signatures.
 	 * @return success bool, true if successful
 	 */
-	receiveMessage(): boolean {
-		return true;
+	receiveMessage(
+		message: Message,
+		attestation: bytes
+	): boolean {
+		// TODO: WhenNotPaused
+	    // TODO: Validate each signature in the attestation
+	    // this._verifyAttestationSignatures(message, attestation);
+
+		// replace _msg with message
+	    // bytes29 _msg = message.ref(0);
+
+	    // Validate message format
+	    this._validateMessageFormat(message);
+
+	    // Validate domain
+		assert(message._msgDestinationDomain === this.localDomain.value);
+
+	    // Validate destination caller
+		if (message._msgDestinationCaller != globals.zeroAddress as unknown as byte[32]) {
+			assert(message._msgDestinationCaller === this.txn.sender as unknown as byte[32]);
+		}
+
+	    // Validate version
+		assert(message._msgVersion === this.version.value);
+
+	    // Validate nonce is available
+		const boxNumber: uint<64> = message._msgNonce / 262144;
+		const offset: uint<64> = message._msgNonce / 8;
+		const flagPosition: uint<64> = message._msgNonce % 8;
+		const box: SourceDomainNonceBox = {
+			sourceDomain: message._msgSourceDomain,
+			boxNumber: boxNumber,
+		};
+		const nonceByte: bytes = this.usedNonces(box).extract(offset, 1);
+		const nonceUsed: boolean = getbit(nonceByte, flagPosition) as boolean;
+		assert(!nonceUsed);
+
+	    // Mark nonce used
+		const updatedNonceByte: bytes = setbit(nonceByte, flagPosition, 1) as bytes;
+		this.usedNonces(box).replace(offset, updatedNonceByte);
+
+	    // Handle receive message
+		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
+			applicationID: Application.fromID(btoi(message._msgRecipient)),
+			name: 'handleReceiveMessage',
+			methodArgs: [
+				message._msgSourceDomain,
+				message._msgSender,
+				message._msgRawBody
+			]
+		});
+		// TODO: If the itxn fails, the whole thing fails, so no need to check?
+		assert(handled);
+
+	    // TODO: Emit Event MessageReceived(this.txn.sender, message._msgSourceDomain, message._msgNonce, message._msgSender, message._msgRawBody);
+
+	    return true;
 	}
 
-	setMaxMessageBodySize(): void {}
+	/**
+	 * @notice Sets the max message body size
+	 * @dev This value should not be reduced without good reason,
+	 * to avoid impacting users who rely on large messages.
+	 * @param newMaxMessageBodySize new max message body size, in bytes
+	 */
+	function setMaxMessageBodySize(
+		newMaxMessageBodySize: uint<64>
+	): void {
+		this.onlyOwner();
+
+		this.maxMessageBodySize.value = newMaxMessageBodySize;
+		// TODO: Emit Event MaxMessageBodySizeUpdated(maxMessageBodySize);
+	}
 
 
 	// ============ Constructor ============
