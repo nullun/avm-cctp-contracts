@@ -1,10 +1,5 @@
 import { Contract } from '@algorandfoundation/tealscript';
 
-type SourceDomainNonceBox = {
-	sourceDomain: uint<32>;
-	boxNumber: uint<64>;
-};
-
 type Message = {
 	_msgVersion: uint<32>,
 	_msgSourceDomain: uint<32>,
@@ -14,6 +9,19 @@ type Message = {
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
 	_msgRawBody: bytes
+};
+
+type BurnMessage = {
+	_version: uint<32>,
+	_burnToken: byte[32],
+	_mintRecipient: byte[32],
+	_amount: uint<256>,
+	_messageSender: byte[32]
+};
+
+type SourceDomainNonceBox = {
+	sourceDomain: uint<32>;
+	boxNumber: uint<64>;
 };
 
 class MessageTransmitter extends Contract {

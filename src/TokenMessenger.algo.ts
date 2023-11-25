@@ -1,5 +1,16 @@
 import { Contract } from '@algorandfoundation/tealscript';
 
+type Message = {
+	_msgVersion: uint<32>,
+	_msgSourceDomain: uint<32>,
+	_msgDestinationDomain: uint<32>,
+	_msgNonce: uint<64>,
+	_msgSender: byte[32],
+	_msgRecipient: byte[32],
+	_msgDestinationCaller: byte[32],
+	_msgRawBody: bytes
+};
+
 type BurnMessage = {
 	_version: uint<32>,
 	_burnToken: byte[32],
@@ -22,65 +33,6 @@ class TokenMessenger extends Contract {
 
 	// Valid TokenMessengers on remote domains
 	remoteTokenMessengers = BoxMap<uint<32>, byte[32]>();
-
-
-	// ============ External Functions  ============
-	/**
-	 * @notice Deposits and burns tokens from sender to be minted on destination domain.
-	 * Emits a `DepositForBurn` event.
-	 * @dev reverts if:
-	 * - given burnToken is not supported
-	 * - given destinationDomain has no TokenMessenger registered
-	 * - transferFrom() reverts. For example, if sender's burnToken balance or approved allowance
-	 * to this contract is less than `amount`.
-	 * - burn() reverts. For example, if `amount` is 0.
-	 * - MessageTransmitter returns false or reverts.
-	 * @param axfer asset transfer of tokens to burn
-	 * @param destinationDomain destination domain
-	 * @param mintRecipient address of mint recipient on destination domain
-	 * @param burnToken address of contract to burn deposited tokens, on local domain
-	 * @return _nonce unique nonce reserved by message
-	 */
-	depositForBurn(
-		axfer: AssetTransferTxn,
-		destinationDomain: uint<32>,
-		mintRecipient: byte[32],
-		burnToken: Asset
-	): uint<64> {
-		return this._depositForBurn(
-			axfer,
-			destinationDomain,
-			mintRecipient,
-			burnToken,
-			// (zeroAddress here indicates that any address can call receiveMessage()
-			// on the destination domain, triggering mint to specified `mintRecipient`)
-			globals.zeroAddress as unknown as byte[32]
-		);
-	}
-
-	/**
-	 * @return _nonce unique nonce reserved by message
-	 */
-	depositForBurnWithCaller(): uint<64> {
-		return 0;
-	}
-
-	replaceDepositForBurn(): void {}
-
-	/**
-	 * @return success bool, true if successful
-	 */
-	handleReceiveMessage(): boolean {
-		return true
-	}
-
-	addRemoteTokenMessenger(): void {}
-
-	removeRemoteTokenMessenger(): void {}
-
-	addLocalMinter(): void {}
-
-	removeLocalMinter(): void {}
 
 
 	// ============ Internal Utils ============
@@ -141,7 +93,7 @@ class TokenMessenger extends Contract {
 	 * @return _tokenMessenger The address of the TokenMessenger on `_domain` as bytes32
 	 */
 	private _getRemoteTokenMessenger(_domain: uint<32>): byte[32] {
-		const _tokenMessenger: byte[32] = this.remoteTokenMessengers(_domain).value;
+		const _tokenMessenger: byte[32] = this.remoteTokenMessengers(_domain).value as byte[32];
 
 		assert(_tokenMessenger !== bzero(32));
 
@@ -151,7 +103,7 @@ class TokenMessenger extends Contract {
 	/**
 	 * @notice Deposits and burns tokens from sender to be minted on destination domain.
 	 * Emits a `DepositForBurn` event.
-	 * @param _amount amount of tokens to burn (must be non-zero)
+	 * @param _axfer asset transfer of tokens to burn (must be non-zero)
 	 * @param _destinationDomain destination domain
 	 * @param _mintRecipient address of mint recipient on destination domain
 	 * @param _burnToken address of contract to burn deposited tokens, on local domain
@@ -194,15 +146,15 @@ class TokenMessenger extends Contract {
 			_version: this.messageBodyVersion.value,
 			_burnToken: itob(_burnToken) as byte[32],
 			_mintRecipient: _mintRecipient,
-			_amount: itob(_axfer.assetAmount) as uint<256>,
-			_messageSender: this.txn.sender as unknown as byte[32]
+			_amount: <uint<256>>_axfer.assetAmount,
+			_messageSender: <byte[32]>(this.txn.sender as unknown)
 		};
 
 		const _nonceReserved: uint<64> = this._sendDepositForBurnMessage(
 		    _destinationDomain,
 		    _destinationTokenMessenger,
 		    _destinationCaller,
-		    _burnMessage as bytes
+		    _burnMessage as unknown as bytes
 		);
 
 		/*
@@ -230,6 +182,169 @@ class TokenMessenger extends Contract {
 	private _isLocalMessageTransmitter(): boolean {
 		return true;
 	}
+
+
+	// ============ External Functions  ============
+	/**
+	 * @notice Deposits and burns tokens from sender to be minted on destination domain.
+	 * Emits a `DepositForBurn` event.
+	 * @dev reverts if:
+	 * - given burnToken is not supported
+	 * - given destinationDomain has no TokenMessenger registered
+	 * - transferFrom() reverts. For example, if sender's burnToken balance or approved allowance
+	 * to this contract is less than `amount`.
+	 * - burn() reverts. For example, if `amount` is 0.
+	 * - MessageTransmitter returns false or reverts.
+	 * @param axfer asset transfer of tokens to burn
+	 * @param destinationDomain destination domain
+	 * @param mintRecipient address of mint recipient on destination domain
+	 * @param burnToken address of contract to burn deposited tokens, on local domain
+	 * @return _nonce unique nonce reserved by message
+	 */
+	depositForBurn(
+		axfer: AssetTransferTxn,
+		destinationDomain: uint<32>,
+		mintRecipient: byte[32],
+		burnToken: Asset
+	): uint<64> {
+		return this._depositForBurn(
+			axfer,
+			destinationDomain,
+			mintRecipient,
+			burnToken,
+			// (zeroAddress here indicates that any address can call receiveMessage()
+			// on the destination domain, triggering mint to specified `mintRecipient`)
+			bzero(32)
+		);
+	}
+
+	/**
+	 * @notice Deposits and burns tokens from sender to be minted on destination domain. The mint
+	 * on the destination domain must be called by `destinationCaller`.
+	 * WARNING: if the `destinationCaller` does not represent a valid address as bytes32, then it will not be possible
+	 * to broadcast the message on the destination domain. This is an advanced feature, and the standard
+	 * depositForBurn() should be preferred for use cases where a specific destination caller is not required.
+	 * Emits a `DepositForBurn` event.
+	 * @dev reverts if:
+	 * - given destinationCaller is zero address
+	 * - given burnToken is not supported
+	 * - given destinationDomain has no TokenMessenger registered
+	 * - transferFrom() reverts. For example, if sender's burnToken balance or approved allowance
+	 * to this contract is less than `amount`.
+	 * - burn() reverts. For example, if `amount` is 0.
+	 * - MessageTransmitter returns false or reverts.
+	 * @param axfer amount of tokens to burn (must be non-zero)
+	 * @param destinationDomain destination domain
+	 * @param mintRecipient address of mint recipient on destination domain
+	 * @param burnToken address of contract to burn deposited tokens, on local domain
+	 * @param destinationCaller caller on the destination domain, as bytes32
+	 * @return nonce unique nonce reserved by message
+	 */
+	depositForBurnWithCaller(
+		axfer: AssetTransferTxn,
+		destinationDomain: uint<32>,
+		mintRecipient: byte[32],
+		burnToken: Asset,
+		destinationCaller: byte[32]
+	): uint<64> {
+	    // Destination caller must be nonzero. To allow any destination caller, use depositForBurn().
+		assert(destinationCaller !== bzero(32));
+
+		return this._depositForBurn(
+			axfer,
+			destinationDomain,
+			mintRecipient,
+			burnToken,
+			destinationCaller
+		);
+	}
+
+	/**
+	 * @notice Replace a BurnMessage to change the mint recipient and/or
+	 * destination caller. Allows the sender of a previous BurnMessage
+	 * (created by depositForBurn or depositForBurnWithCaller)
+	 * to send a new BurnMessage to replace the original.
+	 * The new BurnMessage will reuse the amount and burn token of the original,
+	 * without requiring a new deposit.
+	 * @dev The new message will reuse the original message's nonce. For a
+	 * given nonce, all replacement message(s) and the original message are
+	 * valid to broadcast on the destination domain, until the first message
+	 * at the nonce confirms, at which point all others are invalidated.
+	 * Note: The msg.sender of the replaced message must be the same as the
+	 * msg.sender of the original message.
+	 * @param originalMessage original message bytes (to replace)
+	 * @param originalAttestation original attestation bytes
+	 * @param newDestinationCaller the new destination caller, which may be the
+	 * same as the original destination caller, a new destination caller, or an empty
+	 * destination caller (bytes32(0), indicating that any destination caller is valid.)
+	 * @param newMintRecipient the new mint recipient, which may be the same as the
+	 * original mint recipient, or different.
+	 */
+	replaceDepositForBurn(
+	    originalMessage: Message,
+	    originalAttestation: bytes,
+	    newDestinationCaller: byte[32],
+	    newMintRecipient: byte[32]
+	): void {
+		const _originalMsg: Message = originalMessage;
+		const _originalMsgBody: BurnMessage = _originalMsg._msgRawBody as unknown as BurnMessage;
+
+		const _originalMsgSender: byte[32] = _originalMsgBody._messageSender;
+		// _originalMsgSender must match msg.sender of original message
+		assert(this.txn.sender as unknown as byte[32] === _originalMsgSender);
+		assert(newMintRecipient !== bzero(32));
+
+		const _burnToken: Asset = btoi(_originalMsgBody._burnToken) as unknown as Asset;
+		const _amount: uint<256> = _originalMsgBody._amount;
+
+		const newMessageBody: BurnMessage = {
+			_version: this.messageBodyVersion.value,
+			_burnToken: itob(_burnToken) as byte[32],
+			_mintRecipient: newMintRecipient,
+			_amount: _amount,
+			_messageSender: _originalMsgSender
+		};
+
+		sendMethodCall<[bytes, bytes, bytes, byte[32]], void>({
+			applicationID: this.localMessageTransmitter.value,
+			name: 'replaceMessage',
+			methodArgs: [
+				originalMessage as unknown as bytes,
+				originalAttestation,
+				newMessageBody as unknown as bytes,
+				newDestinationCaller
+			]
+		});
+
+		/*
+		// TODO: Emit Event DepositForBurn(
+			_originalMsg._nonce(),
+			Message.bytes32ToAddress(_burnToken),
+			_amount,
+			msg.sender,
+			newMintRecipient,
+			_originalMsg._destinationDomain(),
+			_originalMsg._recipient(),
+			newDestinationCaller
+		);
+		*/
+	}
+
+	/**
+	 * @return success bool, true if successful
+	 */
+	handleReceiveMessage(): boolean {
+		return true
+	}
+
+	addRemoteTokenMessenger(): void {}
+
+	removeRemoteTokenMessenger(): void {}
+
+	addLocalMinter(): void {}
+
+	removeLocalMinter(): void {}
+
 
     // ============ Constructor ============
     /**
