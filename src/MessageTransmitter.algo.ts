@@ -44,17 +44,17 @@ class MessageTransmitter extends Contract {
 	enabledAttester = LocalStateKey<boolean>({ key: 'attester' });
 
 	// ===== MessageTransmitter =====
-    // Domain of chain on which the application is deployed
-    localDomain = GlobalStateKey<uint<32>>();
+	// Domain of chain on which the application is deployed
+	localDomain = GlobalStateKey<uint<32>>();
 
-    // Message Format version
+	// Message Format version
 	version = GlobalStateKey<uint<32>>();
 
-    // Maximum size of message body, in bytes.
-    // This value is set by owner.
+	// Maximum size of message body, in bytes.
+	// This value is set by owner.
 	maxMessageBodySize = GlobalStateKey<uint<64>>();
 
-    // Next available nonce from this source domain
+	// Next available nonce from this source domain
 	nextAvailableNonce = GlobalStateKey<uint<64>>();
 
 	// Stores 262,144 nonce flags per box (0 if unused, 1 if used)
@@ -175,24 +175,24 @@ class MessageTransmitter extends Contract {
 
 	// ============ External Functions  ============
 	// ===== Ownable =====
-    /**
-     * @dev Transfers ownership of the application to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    transferOwnership(newOwner: Address): void {
+	/**
+	 * @dev Transfers ownership of the application to a new account (`newOwner`).
+	 * Can only be called by the current owner.
+	 */
+	transferOwnership(newOwner: Address): void {
 		this.onlyOwner();
 
 		assert(newOwner != globals.zeroAddress);
 
-        this._transferOwnership(newOwner);
-    }
+		this._transferOwnership(newOwner);
+	}
 
 	// ===== Attestable =====
-    /**
-     * @notice Enables an attester
-     * @dev Only callable by attesterManager. New attester must be opted in and currently disabled.
-     * @param newAttester attester to enable
-     */
+	/**
+	 * @notice Enables an attester
+	 * @dev Only callable by attesterManager. New attester must be opted in and currently disabled.
+	 * @param newAttester attester to enable
+	 */
 	enableAttester(newAttester: Account): void {
 		this.onlyAttesterManager();
 
@@ -227,18 +227,18 @@ class MessageTransmitter extends Contract {
 	disableAttester(attester: Account): void {
 		this.onlyAttesterManager();
 
-	    assert(this.numAttesters.value > 1);
-	    assert(this.numAttesters.value > this.signatureThreshold.value);
+		assert(this.numAttesters.value > 1);
+		assert(this.numAttesters.value > this.signatureThreshold.value);
 		assert(this.enabledAttester(attester).exists);
 
-	    this.enabledAttester(attester).delete();
+		this.enabledAttester(attester).delete();
 	}
 
 	/**
 	 * @notice Sets the threshold of signatures required to attest to a message.
-     * (This is the m in m/n multisig.)
+	 * (This is the m in m/n multisig.)
 	 * @dev new signature threshold must be nonzero, and must not exceed number
-     * of enabled attesters.
+	 * of enabled attesters.
 	 * @param newSignatureThreshold new signature threshold
 	 */
 	setSignatureThreshold(newSignatureThreshold: uint<64>): void {
@@ -272,12 +272,12 @@ class MessageTransmitter extends Contract {
 		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
 
 		this._sendMessage(
-		    destinationDomain,
-		    recipient,
-		    globals.zeroAddress as unknown as byte[32],
-		    _messageSender,
-		    _nonce,
-		    messageBody
+			destinationDomain,
+			recipient,
+			globals.zeroAddress as unknown as byte[32],
+			_messageSender,
+			_nonce,
+			messageBody
 		);
 
 		return _nonce;
@@ -321,12 +321,12 @@ class MessageTransmitter extends Contract {
 		const _nonce: uint<64> = originalMessage._msgNonce;
 
 		this._sendMessage(
-		    _destinationDomain,
-		    _recipient,
-		    newDestinationCaller,
-		    _sender,
-		    _nonce,
-		    newMessageBody
+			_destinationDomain,
+			_recipient,
+			newDestinationCaller,
+			_sender,
+			_nonce,
+			newMessageBody
 		);
 	}
 
@@ -352,19 +352,19 @@ class MessageTransmitter extends Contract {
 		// TODO: WhenNotPaused
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
 
-	    const _nonce: uint<64> = this._reserveAndIncrementNonce();
-	    const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
+		const _nonce: uint<64> = this._reserveAndIncrementNonce();
+		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
 
-	    this._sendMessage(
-	        destinationDomain,
-	        recipient,
-	        destinationCaller,
-	        _messageSender,
-	        _nonce,
-	        messageBody
-	    );
+		this._sendMessage(
+			destinationDomain,
+			recipient,
+			destinationCaller,
+			_messageSender,
+			_nonce,
+			messageBody
+		);
 
-	    return _nonce;
+		return _nonce;
 	}
 
 	/**
@@ -402,21 +402,21 @@ class MessageTransmitter extends Contract {
 		attestation: bytes
 	): boolean {
 		// TODO: WhenNotPaused
-	    // TODO: Validate each signature in the attestation
-	    // this._verifyAttestationSignatures(message, attestation);
+		// TODO: Validate each signature in the attestation
+		// this._verifyAttestationSignatures(message, attestation);
 
-	    // Validate message format
-	    this._validateMessageFormat(message);
+		// Validate message format
+		this._validateMessageFormat(message);
 
-	    // Validate domain
+		// Validate domain
 		assert(message._msgDestinationDomain === this.localDomain.value);
 
-	    // Validate destination caller
+		// Validate destination caller
 		if (message._msgDestinationCaller != globals.zeroAddress as unknown as byte[32]) {
 			assert(message._msgDestinationCaller === this.txn.sender as unknown as byte[32]);
 		}
 
-	    // Validate version
+		// Validate version
 		assert(message._msgVersion === this.version.value);
 
 		// If SourceDomainNonceBox doesn't exist, create it
@@ -436,11 +436,11 @@ class MessageTransmitter extends Contract {
 		const nonceUsed: boolean = getbit(nonceByte, flagPosition) as boolean;
 		assert(!nonceUsed);
 
-	    // Mark nonce used
+		// Mark nonce used
 		const updatedNonceByte: bytes = setbit(nonceByte, flagPosition, 1) as bytes;
 		this.usedNonces(box).replace(offset, updatedNonceByte);
 
-	    // Handle receive message
+		// Handle receive message
 		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
 			applicationID: Application.fromID(btoi(message._msgRecipient)),
 			name: 'handleReceiveMessage',
@@ -454,7 +454,7 @@ class MessageTransmitter extends Contract {
 		assert(handled);
 
 		/*
-	    // TODO: Emit Event MessageReceived(
+		// TODO: Emit Event MessageReceived(
 			this.txn.sender,
 			message._msgSourceDomain,
 			message._msgNonce,
@@ -463,7 +463,7 @@ class MessageTransmitter extends Contract {
 		);
 		*/
 
-	    return true;
+		return true;
 	}
 
 	/**

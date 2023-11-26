@@ -12,15 +12,15 @@ class TokenMinter extends Contract {
 	// hash(remote domain & remote token bytes32 address) => local token (asset)
 	remoteTokensToLocalTokens = BoxMap<byte[32], Asset>();
 
-    // Role with permission to manage token address mapping across domains, and per-message burn limits
+	// Role with permission to manage token address mapping across domains, and per-message burn limits
 	_tokenController = GlobalStateKey<Address>();
 
 	// ===== TokenMinter =====
-    // Local TokenMessenger with permission to call mint and burn on this TokenMinter
+	// Local TokenMessenger with permission to call mint and burn on this TokenMinter
 	localTokenMessenger = GlobalStateKey<Address>();
 
 
-    // ============ Access Checks ============
+	// ============ Access Checks ============
 	// ===== TokenController =====
 	/**
 	 * @dev Throws if called by any account other than the tokenController.
@@ -41,7 +41,7 @@ class TokenMinter extends Contract {
 		token: Asset,
 		amount: uint<64>
 	): void {
-	    const _allowedBurnAmount: uint<64> = this.burnLimitsPerMessage(token).value;
+		const _allowedBurnAmount: uint<64> = this.burnLimitsPerMessage(token).value;
 
 		assert(_allowedBurnAmount);
 		assert(amount <= _allowedBurnAmount);
@@ -115,9 +115,9 @@ class TokenMinter extends Contract {
 	 * - Setting a token pair does not enable the `localToken` (that requires calling setLocalTokenEnabledStatus.)
 	 */
 	linkTokenPair(
-	    localToken: Asset,
-	    remoteDomain: uint<32>,
-	    remoteToken: byte[32]
+		localToken: Asset,
+		remoteDomain: uint<32>,
+		remoteToken: byte[32]
 	): void {
 		this.onlyTokenController();
 
@@ -290,7 +290,7 @@ class TokenMinter extends Contract {
 	): void {
 		// TODO: onlyOwner
 
-	    this._setTokenController(newTokenController);
+		this._setTokenController(newTokenController);
 	}
 
 	/**
