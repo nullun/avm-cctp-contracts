@@ -483,7 +483,8 @@ class MessageTransmitter extends Contract {
 
 
 	// ============ Constructor ============
-	@allow.create('NoOp')
+	// FIX: _attester must be self, and deployment should be OptIn.
+	@allow.create('OptIn')
 	deploy(
 		_localDomain: uint<32>,
 		_attester: Address,
@@ -500,6 +501,7 @@ class MessageTransmitter extends Contract {
 		// Set Attestable
 		this._setAttesterManager(this.txn.sender);
 		this.signatureThreshold.value = 1;
-		this.enableAttester(_attester);
+		// FIX: this.enableAttester(_attester);
+		this.enableAttester(this.txn.sender);
 	}
 }
