@@ -407,13 +407,77 @@ class TokenMessenger extends Contract {
 		return true;
 	}
 
-	addRemoteTokenMessenger(): void {}
+	/**
+	 * @notice Add the TokenMessenger for a remote domain.
+	 * @dev Reverts if there is already a TokenMessenger set for domain.
+	 * @param domain Domain of remote TokenMessenger.
+	 * @param tokenMessenger Address of remote TokenMessenger as bytes32.
+	 */
+	addRemoteTokenMessenger(
+		domain: uint<32>,
+		tokenMessenger: byte[32]
+	): void {
+		// TODO: this.onlyOwner();
 
-	removeRemoteTokenMessenger(): void {}
+		assert(tokenMessenger !== bzero(32));
+		assert(!this.remoteTokenMessengers(domain).exists);
 
-	addLocalMinter(): void {}
+		this.remoteTokenMessengers(domain).value = tokenMessenger;
 
-	removeLocalMinter(): void {}
+		// TODO: Emit Event RemoteTokenMessengerAdded(domain, tokenMessenger);
+	}
+
+	/**
+	 * @notice Remove the TokenMessenger for a remote domain.
+	 * @dev Reverts if there is no TokenMessenger set for `domain`.
+	 * @param domain Domain of remote TokenMessenger
+	 */
+	removeRemoteTokenMessenger(
+		domain: uint<32>
+	): void {
+		// TODO: this.onlyOwner();
+
+		// No TokenMessenger set for given remote domain.
+		assert(this.remoteTokenMessengers(domain).exists);
+
+		const _removedTokenMessenger: byte[32] = this.remoteTokenMessengers(domain).value as byte[32];
+		this.remoteTokenMessengers(domain).delete();
+
+		// TODO: Emit Event RemoteTokenMessengerRemoved(domain, _removedTokenMessenger);
+	}
+
+	/**
+	 * @notice Add minter for the local domain.
+	 * @dev Reverts if a minter is already set for the local domain.
+	 * @param newLocalMinter The address of the minter on the local domain.
+	 */
+	addLocalMinter(
+		newLocalMinter: Application
+	): void {
+		// TODO: this.onlyOwner();
+
+		assert(newLocalMinter);
+		assert(!this.localMinter.exists);
+
+		this.localMinter.value = newLocalMinter;
+
+		// TODO: Emit Event LocalMinterAdded(newLocalMinter);
+	}
+
+	/**
+	 * @notice Remove the minter for the local domain.
+	 * @dev Reverts if the minter of the local domain is not set.
+	 */
+	removeLocalMinter(): void {
+		// TODO: this.onlyOwner();
+
+		const _localMinterAddress: Application = this.localMinter.value;
+		assert(this.localMinter.exists);
+
+		this.localMinter.delete();
+
+		// TODO: Emit Event LocalMinterRemoved(_localMinterAddress);
+	}
 
 
     // ============ Constructor ============
