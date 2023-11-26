@@ -35,6 +35,28 @@ class TokenMessenger extends Contract {
 	remoteTokenMessengers = BoxMap<uint<32>, byte[32]>();
 
 
+	// ============ Modifiers ============
+	/**
+	 * @notice Only accept messages from a registered TokenMessenger contract on given remote domain
+	 * @param domain The remote domain
+	 * @param tokenMessenger The address of the TokenMessenger contract for the given remote domain
+	 */
+	private onlyRemoteTokenMessenger(
+		domain: uint<32>,
+		tokenMessenger: byte[32]
+	): void {
+		assert(this.remoteTokenMessengers(domain).value === tokenMessenger);
+	}
+
+	/**
+	 * @notice Only accept messages from the registered message transmitter on local domain
+	 */
+	private onlyLocalMessageTransmitter(): void {
+		// FIX: Use callerApplicationID instead?
+		assert(this.txn.sender === this.localMessageTransmitter.value.address);
+	}
+
+
 	// ============ Internal Utils ============
 	/**
 	 * @notice return the local minter address if it is set, else revert.
@@ -92,7 +114,9 @@ class TokenMessenger extends Contract {
 	 * @param _domain The domain for which to get the remote TokenMessenger
 	 * @return _tokenMessenger The address of the TokenMessenger on `_domain` as bytes32
 	 */
-	private _getRemoteTokenMessenger(_domain: uint<32>): byte[32] {
+	private _getRemoteTokenMessenger(
+		_domain: uint<32>
+	): byte[32] {
 		const _tokenMessenger: byte[32] = this.remoteTokenMessengers(_domain).value as byte[32];
 
 		assert(_tokenMessenger !== bzero(32));
@@ -144,17 +168,17 @@ class TokenMessenger extends Contract {
 		// Format message body
 		const _burnMessage: BurnMessage = {
 			_version: this.messageBodyVersion.value,
-			_burnToken: itob(_burnToken) as byte[32],
+			_burnToken: concat(bzero(32-len(itob(_burnToken))), itob(_burnToken)) as byte[32],
 			_mintRecipient: _mintRecipient,
 			_amount: <uint<256>>_axfer.assetAmount,
-			_messageSender: <byte[32]>(this.txn.sender as unknown)
+			_messageSender: rawBytes(this.txn.sender) as byte[32]
 		};
 
 		const _nonceReserved: uint<64> = this._sendDepositForBurnMessage(
 		    _destinationDomain,
 		    _destinationTokenMessenger,
 		    _destinationCaller,
-		    _burnMessage as unknown as bytes
+		    rawBytes(_burnMessage)
 		);
 
 		/*
@@ -173,14 +197,33 @@ class TokenMessenger extends Contract {
 		return _nonceReserved;
 	}
 
-	private _mintAndWithdraw(): void {}
+	/**
+	 * @notice Mints tokens to a recipient
+	 * @param _tokenMinter id of TokenMinter contract
+	 * @param _remoteDomain domain where burned tokens originate from
+	 * @param _burnToken address of token burned
+	 * @param _mintRecipient recipient address of minted tokens
+	 * @param _amount amount of minted tokens
+	 */
+	private _mintAndWithdraw(
+		_tokenMinter: Application,
+		_remoteDomain: uint<32>,
+		_burnToken: byte[32],
+		_mintRecipient: Address,
+		_amount: uint<64>
+	): void {
+		sendMethodCall<[uint<32>, byte[32], Address, uint<64>], Asset>({
+			applicationID: _tokenMinter,
+			name: 'mint',
+			methodArgs: [
+				_remoteDomain,
+				_burnToken,
+				_mintRecipient,
+				_amount
+			]
+		});
 
-	private _isRemoteTokenMessenger(): boolean {
-		return true;
-	}
-
-	private _isLocalMessageTransmitter(): boolean {
-		return true;
+		// TODO: Emit Event MintAndWithdraw(_mintRecipient, _amount, _mintToken);
 	}
 
 
@@ -331,10 +374,37 @@ class TokenMessenger extends Contract {
 	}
 
 	/**
-	 * @return success bool, true if successful
+	 * @notice Handles an incoming message received by the local MessageTransmitter,
+	 * and takes the appropriate action. For a burn message, mints the
+	 * associated token to the requested recipient on the local domain.
+	 * @dev Validates the local sender is the local MessageTransmitter, and the
+	 * remote sender is a registered remote TokenMessenger for `remoteDomain`.
+	 * @param remoteDomain The domain where the message originated from.
+	 * @param sender The sender of the message (remote TokenMessenger).
+	 * @param messageBody The message body bytes.
+	 * @return success Bool, true if successful.
 	 */
-	handleReceiveMessage(): boolean {
-		return true
+	handleReceiveMessage(
+		remoteDomain: uint<32>,
+		sender: byte[32],
+		messageBody: BurnMessage
+	): boolean {
+		this.onlyLocalMessageTransmitter();
+		this.onlyRemoteTokenMessenger(remoteDomain, sender);
+
+		assert(messageBody._version === this.messageBodyVersion.value);
+
+		// FIX: Make sure the amount isn't larger than bitlen 16? (uint64, otherwise we're minting much less than was burnt)
+
+		this._mintAndWithdraw(
+			this._getLocalMinter(),
+			remoteDomain,
+			messageBody._burnToken,
+			<Address>(messageBody._mintRecipient as unknown),
+			extract_uint64(rawBytes(messageBody._amount), 24)
+		);
+
+		return true;
 	}
 
 	addRemoteTokenMessenger(): void {}
