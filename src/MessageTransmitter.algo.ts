@@ -41,7 +41,7 @@ class MessageTransmitter extends Contract {
 	numAttesters = GlobalStateKey<uint<64>>();
 
 	// Attester Role
-	enabledAttester = LocalStateKey<boolean>({ key: 'attester' });
+	enabledAttester = LocalStateKey<uint<64>>({ key: 'attester' });
 
 	// ===== MessageTransmitter =====
 	// Domain of chain on which the application is deployed
@@ -198,7 +198,7 @@ class MessageTransmitter extends Contract {
 
 		assert(!this.enabledAttester(newAttester).exists);
 
-		this.enabledAttester(newAttester).value = true;
+		this.enabledAttester(newAttester).value = 1;
 		this.numAttesters.value = this.numAttesters.value + 1;
 	}
 

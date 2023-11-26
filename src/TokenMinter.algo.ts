@@ -312,6 +312,7 @@ class TokenMinter extends Contract {
 	/**
 	 * @param _tokenController Token controller address
 	 */
+	@allow.create('NoOp')
 	deploy(_tokenController: Address): void {
 		this._setTokenController(_tokenController);
 	}
