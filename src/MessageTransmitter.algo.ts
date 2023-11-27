@@ -26,6 +26,49 @@ type SourceDomainNonceBox = {
 
 class MessageTransmitter extends Contract {
 
+	// ============ Events ============
+	// ===== Ownable =====
+	OwnershipTransferred = new EventLogger<[Address, Address]>();
+
+	// ===== Attestable =====
+	/**
+	 * @dev Emitted when attester manager address is updated
+	 * @param previousAttesterManager representing the address of the previous attester manager
+	 * @param newAttesterManager representing the address of the new attester manager
+	 */
+	AttesterManagerUpdated = new EventLogger<[Address, Address]>();
+
+	/**
+	 * @notice Emitted when threshold number of attestations (m in m/n multisig) is updated
+	 * @param oldSignatureThreshold old signature threshold
+	 * @param newSignatureThreshold new signature threshold
+	 */
+	SignatureThresholdUpdated = new EventLogger<[uint<64>, uint<64>]>();
+
+	// ===== MessageTransmitter =====
+	/**
+	 * @notice Emitted when a new message is dispatched
+	 * @param message Raw bytes of message
+	 */
+	MessageSent = new EventLogger<[bytes]>();
+
+	/**
+	 * @notice Emitted when a new message is received
+	 * @param caller Caller (this.txn.sender) on destination domain
+	 * @param sourceDomain The source domain this message originated from
+	 * @param nonce The nonce unique to this message
+	 * @param sender The sender of this message
+	 * @param messageBody message body bytes
+	 */
+	MessageReceived = new EventLogger<[Address,uint<64>,uint<32>,base[32],bytes]>();
+
+	/**
+	 * @notice Emitted when max message body size is updated
+	 * @param newMaxMessageBodySize new maximum message body size, in bytes
+	 */
+	MaxMessageBodySizeUpdated = new EventLogger<[uint<64>]>();
+
+
 	// ============ State Variables ============
 	// ===== Ownable =====
 	// Owner of the application
@@ -87,7 +130,8 @@ class MessageTransmitter extends Contract {
 	private _transferOwnership(newOwner: Address): void {
 		const oldOwner: Address = this.owner.value;
 		this.owner.value = newOwner;
-		// TODO: Emit Event OwnershipTransferred(oldOwner, newOwner);
+
+		this.OwnershipTransferred.log(oldOwner, newOwner);
 	}
 
 	// ===== Attestable =====
@@ -145,7 +189,7 @@ class MessageTransmitter extends Contract {
 			_msgRawBody: _messageBody
 		};
 
-		// TODO: Emit Event MessageSent(_message);
+		this.MessageSent.log(_message);
 	}
 
 	/**
@@ -214,7 +258,8 @@ class MessageTransmitter extends Contract {
 
 		const _oldAttesterManager: Address = this.attesterManager.value;
 		this._setAttesterManager(newAttesterManager);
-		// TODO: Emit Event AttesterManagerUpdated(_oldAttesterManager, newAttesterManager);
+
+		this.AttesterManagerUpdated.log(_oldAttesterManager, newAttesterManager);
 	}
 
 	/**
@@ -250,7 +295,8 @@ class MessageTransmitter extends Contract {
 
 		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
 		this.signatureThreshold.value = newSignatureThreshold;
-		// TODO: Emit Event SignatureThresholdUpdated(_oldSignatureThreshold, signatureThreshold);
+
+		this.SignatureThresholdUpdated.log(_oldSignatureThreshold, signatureThreshold);
 	}
 
 	// ===== MessageTransmitter =====
@@ -453,15 +499,13 @@ class MessageTransmitter extends Contract {
 		// TODO: If the itxn fails, the whole thing fails, so no need to check?
 		assert(handled);
 
-		/*
-		// TODO: Emit Event MessageReceived(
+		this.MessageReceived.log(
 			this.txn.sender,
 			message._msgSourceDomain,
 			message._msgNonce,
 			message._msgSender,
 			message._msgRawBody
 		);
-		*/
 
 		return true;
 	}
@@ -478,7 +522,8 @@ class MessageTransmitter extends Contract {
 		this.onlyOwner();
 
 		this.maxMessageBodySize.value = newMaxMessageBodySize;
-		// TODO: Emit Event MaxMessageBodySizeUpdated(maxMessageBodySize);
+
+		this.MaxMessageBodySizeUpdated.log(maxMessageBodySize);
 	}
 
 
