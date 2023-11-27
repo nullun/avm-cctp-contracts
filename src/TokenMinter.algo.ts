@@ -17,7 +17,7 @@ class TokenMinter extends Contract {
 
 	// ===== TokenMinter =====
 	// Local TokenMessenger with permission to call mint and burn on this TokenMinter
-	localTokenMessenger = GlobalStateKey<Address>();
+	localTokenMessenger = GlobalStateKey<Application>();
 
 
 	// ============ Access Checks ============
@@ -52,7 +52,7 @@ class TokenMinter extends Contract {
 	 * @notice Only accept messages from the registered message transmitter on local domain
 	 */
 	private onlyLocalTokenMessenger(): void {
-		assert(this.txn.sender === this.localTokenMessenger.value);
+		assert(this.txn.sender === this.localTokenMessenger.value.address);
 	}
 
 
@@ -251,11 +251,11 @@ class TokenMinter extends Contract {
 	 * @param newLocalTokenMessenger The address of the new TokenMessenger on the local domain.
 	 */
 	addLocalTokenMessenger(
-		newLocalTokenMessenger: Address
+		newLocalTokenMessenger: Application
 	): void {
 		// TODO: onlyOwner
 
-		assert(newLocalTokenMessenger != globals.zeroAddress);
+		assert(newLocalTokenMessenger);
 		assert(!this.localTokenMessenger.exists);
 
 		this.localTokenMessenger.value = newLocalTokenMessenger;
@@ -272,7 +272,7 @@ class TokenMinter extends Contract {
 
 		assert(this.localTokenMessenger.exists);
 
-		const _localTokenMessengerBeforeRemoval: Address = this.localTokenMessenger.value;
+		const _localTokenMessengerBeforeRemoval: Application = this.localTokenMessenger.value;
 
 		this.localTokenMessenger.delete();
 
