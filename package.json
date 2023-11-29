@@ -1,15 +1,22 @@
 {
-  "name": "avm-cctp-contracts_02",
-  "version": "1.0.0",
-  "description": "",
+  "name": "avm-cctp-contracts",
+  "version": "0.0.1",
+  "author": "Steve Ferrigno",
+  "email": "steve.ferrigno@gmail.com",
   "main": "index.js",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "description": "",
+  "keywords": ["Algorand", "AVM", "USDC", "Circle", "CCTP", "Smart Contracts"],
+  "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@algorandfoundation/tealscript": "^0.63.0"
+    "@algorandfoundation/tealscript": "^0.64.0"
   }
 }

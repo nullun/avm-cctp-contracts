@@ -24,6 +24,9 @@ type SourceDomainNonceBox = {
 	boxNumber: uint<64>;
 };
 
+// 65-byte ECDSA signature: v (1) + r (32) + s (32)
+const signatureLength = 65;
+
 class MessageTransmitter extends Contract {
 
 	// ============ Events ============
@@ -60,7 +63,7 @@ class MessageTransmitter extends Contract {
 	 * @param sender The sender of this message
 	 * @param messageBody message body bytes
 	 */
-	MessageReceived = new EventLogger<[Address,uint<64>,uint<32>,base[32],bytes]>();
+	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],bytes]>();
 
 	/**
 	 * @notice Emitted when max message body size is updated
@@ -143,6 +146,73 @@ class MessageTransmitter extends Contract {
 		this.attesterManager.value = _newAttesterManager;
 	}
 
+	/**
+	 * @notice Checks that signature was signed by attester
+	 * @param _digest message hash
+	 * @param _signature message signature
+	 * @return address of recovered signer
+	 **/
+	private _recoverAttesterSignature(
+		_digest: byte[32],
+		_signature: bytes
+	): Address {
+		return globals.zeroAddress;
+		/*
+		// FIX: ECDSA PK RECOVER
+		const r = substring3(_signature, 0, 32) as byte[32];
+		const s = substring3(_signature, 32, 64) as byte[32];
+		const v = getbyte(_signature, 65) as uint<64>;
+		const val = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		return val[1] as unknown as Address;
+		*/
+	}
+
+	/**
+	 * @notice reverts if the attestation, which is comprised of one or more concatenated 65-byte signatures, is invalid.
+	 * @dev Rules for valid attestation:
+	 * 1. length of `_attestation` == 65 (signature length) * signatureThreshold
+	 * 2. addresses recovered from attestation must be in increasing order.
+	 * For example, if signature A is signed by address 0x1..., and signature B
+	 * is signed by address 0x2..., attestation must be passed as AB.
+	 * 3. no duplicate signers
+	 * 4. all signers must be enabled attesters
+	 *
+	 * Based on Christian Lundkvist's Simple Multisig
+	 * (https://github.com/christianlundkvist/simple-multisig/tree/560c463c8651e0a4da331bd8f245ccd2a48ab63d)
+	 * @param _message message to verify attestation of
+	 * @param _attestation attestation of `_message`
+	 */
+	private _verifyAttestationSignatures(
+		_message: bytes,
+		_attestation: bytes
+	): void {
+		assert(_attestation.length === signatureLength * this.signatureThreshold.value);
+
+		// (Attesters cannot be address(0))
+		// Address recovered from signatures must be in increasing order, to prevent duplicates
+		let _latestAttesterAddress = globals.zeroAddress;
+
+		const _digest: byte[32] = keccak256(_message);
+	    for (let i: uint<64>; i < this.signatureThreshold.value; i=i+1) {
+			const _signature = substring3(
+				_attestation,
+				i * signatureLength,
+				i * signatureLength + signatureLength
+			);
+
+			const _recoveredAttester: Address = this._recoverAttesterSignature(
+				_digest,
+				_signature
+			);
+
+	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
+			assert(_recoveredAttester > _latestAttesterAddress);
+			assert(this.enabledAttester(_recoveredAttester).value);
+
+	        _latestAttesterAddress = _recoveredAttester;
+	    }
+	}
+
 	// ===== MessageTransmitter =====
 	/**
 	 * Reserve and increment next available nonce
@@ -189,7 +259,7 @@ class MessageTransmitter extends Contract {
 			_msgRawBody: _messageBody
 		};
 
-		this.MessageSent.log(_message);
+		this.MessageSent.log(rawBytes(_message));
 	}
 
 	/**
@@ -296,7 +366,7 @@ class MessageTransmitter extends Contract {
 		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
 		this.signatureThreshold.value = newSignatureThreshold;
 
-		this.SignatureThresholdUpdated.log(_oldSignatureThreshold, signatureThreshold);
+		this.SignatureThresholdUpdated.log(_oldSignatureThreshold, this.signatureThreshold.value);
 	}
 
 	// ===== MessageTransmitter =====
@@ -523,7 +593,7 @@ class MessageTransmitter extends Contract {
 
 		this.maxMessageBodySize.value = newMaxMessageBodySize;
 
-		this.MaxMessageBodySizeUpdated.log(maxMessageBodySize);
+		this.MaxMessageBodySizeUpdated.log(this.maxMessageBodySize.value);
 	}
 
 
