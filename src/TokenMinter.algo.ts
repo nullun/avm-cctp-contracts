@@ -121,6 +121,13 @@ class TokenMinter extends Contract {
 	): void {
 		this.onlyTokenController();
 
+		// OptIn to asset
+		sendAssetTransfer({
+			xferAsset: localToken,
+			assetReceiver: this.app.address,
+			assetAmount: 0
+		});
+
 		const _remoteTokensKey: byte[32] = this._hashRemoteDomainAndToken(
 			remoteDomain,
 			remoteToken
@@ -150,6 +157,8 @@ class TokenMinter extends Contract {
 		remoteToken: byte[32]
 	): void {
 		this.onlyTokenController()
+
+		// TODO: CloseOut of ASA
 
 		const _remoteTokensKey: byte[32] = this._hashRemoteDomainAndToken(
 			remoteDomain,
