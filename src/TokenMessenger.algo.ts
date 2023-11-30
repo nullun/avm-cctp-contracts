@@ -21,6 +21,58 @@ type BurnMessage = {
 
 class TokenMessenger extends Contract {
 
+	// ============ Events ============
+	/**
+	 * @notice Emitted when a DepositForBurn message is sent
+	 * @param nonce unique nonce reserved by message
+	 * @param burnToken address of token burnt on source domain
+	 * @param amount deposit amount
+	 * @param depositor address where deposit is transferred from
+	 * @param mintRecipient address receiving minted tokens on destination domain as bytes32
+	 * @param destinationDomain destination domain
+	 * @param destinationTokenMessenger address of TokenMessenger on destination domain as bytes32
+	 * @param destinationCaller authorized caller as bytes32 of receiveMessage() on destination domain, if not equal to bytes32(0).
+	 * If equal to bytes32(0), any address can call receiveMessage().
+	 */
+	DepositForBurn = new EventLogger<[uint<64>, Asset, uint<256>, Address, byte[32], uint<32>, byte[32], byte[32]]>();
+
+	/**
+	 * @notice Emitted when tokens are minted
+	 * @param mintRecipient recipient address of minted tokens
+	 * @param amount amount of minted tokens
+	 * @param mintToken asset of minted token
+	 */
+	MintAndWithdraw = new EventLogger<[Address, uint<256>, Asset]>();
+
+	/**
+	 * @notice Emitted when a remote TokenMessenger is added
+	 * @param domain remote domain
+	 * @param tokenMessenger TokenMessenger on remote domain
+	 */
+	RemoteTokenMessengerAdded = new EventLogger<[uint<32>, byte[32]]>();
+
+	/**
+	 * @notice Emitted when a remote TokenMessenger is removed
+	 * @param domain remote domain
+	 * @param tokenMessenger TokenMessenger on remote domain
+	 */
+	RemoteTokenMessengerRemoved = new EventLogger<[uint<32>, byte[32]]>();
+
+	/**
+	 * @notice Emitted when the local minter is added
+	 * @param localMinter address of local minter
+	 * @notice Emitted when the local minter is added
+	 */
+	LocalMinterAdded = new EventLogger<[Application]>();
+
+	/**
+	 * @notice Emitted when the local minter is removed
+	 * @param localMinter address of local minter
+	 * @notice Emitted when the local minter is removed
+	 */
+	LocalMinterRemoved = new EventLogger<[Application]>();
+
+
 	// ============ State Variables ============
 	// Local Message Transmitter responsible for sending and receiving messages to/from remote domains
 	localMessageTransmitter = GlobalStateKey<Application>();
@@ -181,18 +233,16 @@ class TokenMessenger extends Contract {
 		    rawBytes(_burnMessage)
 		);
 
-		/*
-		// TODO: Emit Event DepositForBurn(
-		    _nonceReserved,
-		    _burnToken,
-		    _amount,
-		    msg.sender,
-		    _mintRecipient,
-		    _destinationDomain,
-		    _destinationTokenMessenger,
-		    _destinationCaller
+		this.DepositForBurn.log(
+			_nonceReserved,
+			_burnToken,
+			<uint<256>>_axfer.assetAmount,
+			this.txn.sender,
+			_mintRecipient,
+			_destinationDomain,
+			_destinationTokenMessenger,
+			_destinationCaller
 		);
-		*/
 
 		return _nonceReserved;
 	}
@@ -212,7 +262,7 @@ class TokenMessenger extends Contract {
 		_mintRecipient: Address,
 		_amount: uint<64>
 	): void {
-		sendMethodCall<[uint<32>, byte[32], Address, uint<64>], Asset>({
+		const _mintToken = sendMethodCall<[uint<32>, byte[32], Address, uint<64>], Asset>({
 			applicationID: _tokenMinter,
 			name: 'mint',
 			methodArgs: [
@@ -223,7 +273,7 @@ class TokenMessenger extends Contract {
 			]
 		});
 
-		// TODO: Emit Event MintAndWithdraw(_mintRecipient, _amount, _mintToken);
+		this.MintAndWithdraw.log(_mintRecipient, <uint<256>>_amount, _mintToken);
 	}
 
 
@@ -359,18 +409,16 @@ class TokenMessenger extends Contract {
 			]
 		});
 
-		/*
-		// TODO: Emit Event DepositForBurn(
-			_originalMsg._nonce(),
-			Message.bytes32ToAddress(_burnToken),
+		this.DepositForBurn.log(
+			_originalMsg._msgNonce,
+			_burnToken,
 			_amount,
-			msg.sender,
+			this.txn.sender,
 			newMintRecipient,
-			_originalMsg._destinationDomain(),
-			_originalMsg._recipient(),
+			_originalMsg._msgDestinationDomain,
+			_originalMsg._msgRecipient,
 			newDestinationCaller
 		);
-		*/
 	}
 
 	/**
@@ -424,7 +472,7 @@ class TokenMessenger extends Contract {
 
 		this.remoteTokenMessengers(domain).value = tokenMessenger;
 
-		// TODO: Emit Event RemoteTokenMessengerAdded(domain, tokenMessenger);
+		this.RemoteTokenMessengerAdded.log(domain, tokenMessenger);
 	}
 
 	/**
@@ -443,7 +491,7 @@ class TokenMessenger extends Contract {
 		const _removedTokenMessenger: byte[32] = this.remoteTokenMessengers(domain).value as byte[32];
 		this.remoteTokenMessengers(domain).delete();
 
-		// TODO: Emit Event RemoteTokenMessengerRemoved(domain, _removedTokenMessenger);
+		this.RemoteTokenMessengerRemoved.log(domain, _removedTokenMessenger);
 	}
 
 	/**
@@ -461,7 +509,7 @@ class TokenMessenger extends Contract {
 
 		this.localMinter.value = newLocalMinter;
 
-		// TODO: Emit Event LocalMinterAdded(newLocalMinter);
+		this.LocalMinterAdded.log(newLocalMinter);
 	}
 
 	/**
@@ -476,7 +524,7 @@ class TokenMessenger extends Contract {
 
 		this.localMinter.delete();
 
-		// TODO: Emit Event LocalMinterRemoved(_localMinterAddress);
+		this.LocalMinterRemoved.log(_localMinterAddress);
 	}
 
 
