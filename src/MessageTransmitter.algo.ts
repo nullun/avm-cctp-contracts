@@ -134,7 +134,7 @@ class MessageTransmitter extends Contract {
 		const oldOwner: Address = this.owner.value;
 		this.owner.value = newOwner;
 
-		this.OwnershipTransferred.log(oldOwner, newOwner);
+		this.OwnershipTransferred.log(oldOwner ? oldOwner : globals.zeroAddress, newOwner);
 	}
 
 	// ===== Attestable =====
@@ -329,7 +329,7 @@ class MessageTransmitter extends Contract {
 		const _oldAttesterManager: Address = this.attesterManager.value;
 		this._setAttesterManager(newAttesterManager);
 
-		this.AttesterManagerUpdated.log(_oldAttesterManager, newAttesterManager);
+		this.AttesterManagerUpdated.log(_oldAttesterManager ? _oldAttesterManager : globals.zeroAddress, newAttesterManager);
 	}
 
 	/**

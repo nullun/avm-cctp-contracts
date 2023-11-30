@@ -81,7 +81,7 @@ class TokenMinter extends Contract {
 		remoteDomain: uint<32>,
 		remoteToken: byte[32]
 	): byte[32] {
-		return keccak256(concat(itob(remoteDomain), remoteToken));
+		return keccak256(concat(rawBytes(remoteDomain), remoteToken));
 	}
 
 	/**
