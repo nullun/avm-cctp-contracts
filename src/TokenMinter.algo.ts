@@ -2,6 +2,64 @@ import { Contract } from '@algorandfoundation/tealscript';
 
 class TokenMinter extends Contract {
 
+	// ============ Events ============
+	// ===== TokenController =====
+	/**
+	 * @notice Emitted when a token pair is linked
+	 * @param localToken local token to support
+	 * @param remoteDomain remote domain
+	 * @param remoteToken token on `remoteDomain` corresponding to `localToken`
+	 */
+	TokenPairLinked = new EventLogger<[
+		Asset,
+		uint<32>,
+		byte[32]
+	]>();
+
+	/**
+	 * @notice Emitted when a token pair is unlinked
+	 * @param localToken local token id
+	 * @param remoteDomain remote domain
+	 * @param remoteToken token on `remoteDomain` unlinked from `localToken`
+	 */
+	TokenPairUnlinked = new EventLogger<[
+		Asset,
+		uint<32>,
+		byte[32]
+	]>();
+
+	/**
+	 * @notice Emitted when a burn limit per message is set for a particular token
+	 * @param token local token id
+	 * @param burnLimitPerMessage burn limit per message for `token`
+	 */
+	SetBurnLimitPerMessage = new EventLogger<[
+		Asset,
+		uint<64>
+	]>();
+
+	/**
+	 * @notice Emitted when token controller is set
+	 * @param tokenController token controller id set
+	 */
+	SetTokenController = new EventLogger<[Application]>();
+
+	// ===== TokenMinter =====
+	/**
+	 * @notice Emitted when a local TokenMessenger is added
+	 * @param localTokenMessenger address of local TokenMessenger
+	 * @notice Emitted when a local TokenMessenger is added
+	 */
+	LocalTokenMessengerAdded = new EventLogger<[Address]>();
+
+	/**
+	 * @notice Emitted when a local TokenMessenger is removed
+	 * @param localTokenMessenger address of local TokenMessenger
+	 * @notice Emitted when a local TokenMessenger is removed
+	 */
+	LocalTokenMessengerRemoved = new EventLogger<[Address]>();
+
+
 	// ============ State Variables ============
 	// ===== TokenController =====
 	// Supported burnable tokens on the local domain
@@ -68,7 +126,7 @@ class TokenMinter extends Contract {
 
 		this._tokenController.value = newTokenController;
 
-		// TODO: Emit Event SetTokenController(newTokenController);
+		this.SetTokenController.log(newTokenController);
 	}
 
 	/**
@@ -138,7 +196,7 @@ class TokenMinter extends Contract {
 
 		this.remoteTokensToLocalTokens(_remoteTokensKey).value = localToken;
 
-		// TODO: Emit Event TokenPairLinked(localToken, remoteDomain, remoteToken);
+		this.TokenPairLinked.log(localToken, remoteDomain, remoteToken);
 	}
 
 	/**
