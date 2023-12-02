@@ -8,7 +8,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: bytes
+	_msgRawBody: byte[]
 };
 
 type BurnMessage = {
@@ -34,6 +34,7 @@ class TokenMessenger extends Contract {
 	 * @param destinationCaller authorized caller as bytes32 of receiveMessage() on destination domain, if not equal to bytes32(0).
 	 * If equal to bytes32(0), any address can call receiveMessage().
 	 */
+	// DepositForBurn(uint64,asset,uint256,address,byte[32],uint32,byte[32],byte[32])
 	DepositForBurn = new EventLogger<[uint<64>, Asset, uint<256>, Address, byte[32], uint<32>, byte[32], byte[32]]>();
 
 	/**
@@ -42,6 +43,7 @@ class TokenMessenger extends Contract {
 	 * @param amount amount of minted tokens
 	 * @param mintToken asset of minted token
 	 */
+	// MintAndWithdraw(address,uint256,asset)
 	MintAndWithdraw = new EventLogger<[Address, uint<256>, Asset]>();
 
 	/**
@@ -49,6 +51,7 @@ class TokenMessenger extends Contract {
 	 * @param domain remote domain
 	 * @param tokenMessenger TokenMessenger on remote domain
 	 */
+	// RemoteTokenMessengerAdded(uint32,byte[32])
 	RemoteTokenMessengerAdded = new EventLogger<[uint<32>, byte[32]]>();
 
 	/**
@@ -56,6 +59,7 @@ class TokenMessenger extends Contract {
 	 * @param domain remote domain
 	 * @param tokenMessenger TokenMessenger on remote domain
 	 */
+	// RemoteTokenMessengerRemoved(uint32,byte[32])
 	RemoteTokenMessengerRemoved = new EventLogger<[uint<32>, byte[32]]>();
 
 	/**
@@ -63,6 +67,7 @@ class TokenMessenger extends Contract {
 	 * @param localMinter address of local minter
 	 * @notice Emitted when the local minter is added
 	 */
+	// LocalMinterAddres(application)
 	LocalMinterAdded = new EventLogger<[Application]>();
 
 	/**
@@ -70,6 +75,7 @@ class TokenMessenger extends Contract {
 	 * @param localMinter address of local minter
 	 * @notice Emitted when the local minter is removed
 	 */
+	// LocalMinterRemoved(application)
 	LocalMinterRemoved = new EventLogger<[Application]>();
 
 
@@ -135,10 +141,10 @@ class TokenMessenger extends Contract {
 		_destinationDomain: uint<32>,
 		_destinationTokenMessenger: byte[32],
 		_destinationCaller: byte[32],
-		_burnMessage: bytes
+		_burnMessage: byte[]
 	): uint<64> {
 		if (_destinationCaller === bzero(32)) {
-			return sendMethodCall<[uint<32>, byte[32], bytes], uint<64>>({
+			return sendMethodCall<[uint<32>, byte[32], byte[]], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessage',
 				methodArgs: [
@@ -148,7 +154,7 @@ class TokenMessenger extends Contract {
 				]
 			});
 		} else {
-			return sendMethodCall<[uint<32>, byte[32], byte[32], bytes], uint<64>>({
+			return sendMethodCall<[uint<32>, byte[32], byte[32], byte[]], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessageWithCaller',
 				methodArgs: [
@@ -214,7 +220,7 @@ class TokenMessenger extends Contract {
 			methodArgs: [
 				_burnToken,
 				_axfer.assetAmount
-			]
+			],
 		});
 
 		// Format message body
@@ -230,7 +236,7 @@ class TokenMessenger extends Contract {
 		    _destinationDomain,
 		    _destinationTokenMessenger,
 		    _destinationCaller,
-		    rawBytes(_burnMessage)
+		    _burnMessage as unknown as byte[]
 		);
 
 		this.DepositForBurn.log(
@@ -375,7 +381,7 @@ class TokenMessenger extends Contract {
 	 */
 	replaceDepositForBurn(
 	    originalMessage: Message,
-	    originalAttestation: bytes,
+	    originalAttestation: byte[],
 	    newDestinationCaller: byte[32],
 	    newMintRecipient: byte[32]
 	): void {
@@ -391,20 +397,20 @@ class TokenMessenger extends Contract {
 		const _amount: uint<256> = _originalMsgBody._amount;
 
 		const newMessageBody: BurnMessage = {
-			_version: this.messageBodyVersion.value,
+			_version: this.messageBodyVersion.value as uint<32>,
 			_burnToken: itob(_burnToken) as byte[32],
 			_mintRecipient: newMintRecipient,
 			_amount: _amount,
 			_messageSender: _originalMsgSender
 		};
 
-		sendMethodCall<[bytes, bytes, bytes, byte[32]], void>({
+		sendMethodCall<[byte[], byte[], byte[], byte[32]], void>({
 			applicationID: this.localMessageTransmitter.value,
 			name: 'replaceMessage',
 			methodArgs: [
-				originalMessage as unknown as bytes,
+				originalMessage as unknown as byte[],
 				originalAttestation,
-				newMessageBody as unknown as bytes,
+				newMessageBody as unknown as byte[],
 				newDestinationCaller
 			]
 		});

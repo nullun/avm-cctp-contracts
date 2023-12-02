@@ -8,7 +8,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: bytes
+	_msgRawBody: byte[]
 };
 
 type BurnMessage = {
@@ -31,6 +31,7 @@ class MessageTransmitter extends Contract {
 
 	// ============ Events ============
 	// ===== Ownable =====
+	// OwnershipTransferred(address,address)
 	OwnershipTransferred = new EventLogger<[Address, Address]>();
 
 	// ===== Attestable =====
@@ -39,6 +40,7 @@ class MessageTransmitter extends Contract {
 	 * @param previousAttesterManager representing the address of the previous attester manager
 	 * @param newAttesterManager representing the address of the new attester manager
 	 */
+	// AttesterManagerUpdated(address,address)
 	AttesterManagerUpdated = new EventLogger<[Address, Address]>();
 
 	/**
@@ -46,6 +48,7 @@ class MessageTransmitter extends Contract {
 	 * @param oldSignatureThreshold old signature threshold
 	 * @param newSignatureThreshold new signature threshold
 	 */
+	// SignatureThresholdUpdated(uint64,uint64)
 	SignatureThresholdUpdated = new EventLogger<[uint<64>, uint<64>]>();
 
 	// ===== MessageTransmitter =====
@@ -53,7 +56,8 @@ class MessageTransmitter extends Contract {
 	 * @notice Emitted when a new message is dispatched
 	 * @param message Raw bytes of message
 	 */
-	MessageSent = new EventLogger<[bytes]>();
+	// MessageSent(byte[])
+	MessageSent = new EventLogger<[byte[]]>();
 
 	/**
 	 * @notice Emitted when a new message is received
@@ -63,12 +67,14 @@ class MessageTransmitter extends Contract {
 	 * @param sender The sender of this message
 	 * @param messageBody message body bytes
 	 */
-	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],bytes]>();
+	// MessageReceived(address,uint32,uint64,byte[32],byte[])
+	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],byte[]]>();
 
 	/**
 	 * @notice Emitted when max message body size is updated
 	 * @param newMaxMessageBodySize new maximum message body size, in bytes
 	 */
+	// MaxMessageBodySizeUpdated(uint64)
 	MaxMessageBodySizeUpdated = new EventLogger<[uint<64>]>();
 
 
@@ -154,7 +160,7 @@ class MessageTransmitter extends Contract {
 	 **/
 	private _recoverAttesterSignature(
 		_digest: byte[32],
-		_signature: bytes
+		_signature: byte[]
 	): Address {
 		return globals.zeroAddress;
 		/*
@@ -183,8 +189,8 @@ class MessageTransmitter extends Contract {
 	 * @param _attestation attestation of `_message`
 	 */
 	private _verifyAttestationSignatures(
-		_message: bytes,
-		_attestation: bytes
+		_message: byte[],
+		_attestation: byte[]
 	): void {
 		assert(_attestation.length === signatureLength * this.signatureThreshold.value);
 
@@ -192,17 +198,17 @@ class MessageTransmitter extends Contract {
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
 		let _latestAttesterAddress = globals.zeroAddress;
 
-		const _digest: byte[32] = keccak256(_message);
+		const _digest: byte[32] = keccak256(rawBytes(_message));
 	    for (let i: uint<64>; i < this.signatureThreshold.value; i=i+1) {
 			const _signature = substring3(
-				_attestation,
+				rawBytes(_attestation),
 				i * signatureLength,
 				i * signatureLength + signatureLength
 			);
 
 			const _recoveredAttester: Address = this._recoverAttesterSignature(
 				_digest,
-				_signature
+				_signature as unknown as byte[]
 			);
 
 	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
@@ -242,7 +248,7 @@ class MessageTransmitter extends Contract {
 		_destinationCaller: byte[32],
 		_sender: byte[32],
 		_nonce: uint<64>,
-		_messageBody: bytes
+		_messageBody: byte[]
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
 		assert(_recipient != globals.zeroAddress as unknown as byte[32]);
@@ -259,7 +265,7 @@ class MessageTransmitter extends Contract {
 			_msgRawBody: _messageBody
 		};
 
-		this.MessageSent.log(rawBytes(_message));
+		this.MessageSent.log(_message as unknown as byte[]);
 	}
 
 	/**
@@ -283,7 +289,7 @@ class MessageTransmitter extends Contract {
 	 */
 	private _validateMessageFormat(_message: Message): void {
 		// FIX: Get length of Message? Or can we remove this, since it's a Message type and is already validated
-		//assert(_message as bytes.length >= 116);
+		//assert(_message as byte[].length >= 116);
 	}
 
 
@@ -381,7 +387,7 @@ class MessageTransmitter extends Contract {
 	sendMessage(
 		destinationDomain: uint<32>,
 		recipient: byte[32],
-		messageBody: bytes
+		messageBody: byte[]
 	): uint<64> {
 		// TODO: WhenNotPaused
 		const _nonce: uint<64> = this._reserveAndIncrementNonce();
@@ -413,8 +419,8 @@ class MessageTransmitter extends Contract {
 	 */
 	replaceMessage(
 		originalMessage: Message,
-		originalAttestation: bytes,
-		newMessageBody: bytes,
+		originalAttestation: byte[],
+		newMessageBody: byte[],
 		newDestinationCaller: byte[32]
 	): void {
 		// TODO: WhenNotPaused
@@ -463,7 +469,7 @@ class MessageTransmitter extends Contract {
 		destinationDomain: uint<32>,
 		recipient: byte[32],
 		destinationCaller: byte[32],
-		messageBody: bytes
+		messageBody: byte[]
 	): uint<64> {
 		// TODO: WhenNotPaused
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
@@ -515,7 +521,7 @@ class MessageTransmitter extends Contract {
 	 */
 	receiveMessage(
 		message: Message,
-		attestation: bytes
+		attestation: byte[]
 	): boolean {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
@@ -548,16 +554,16 @@ class MessageTransmitter extends Contract {
 		// Validate nonce is available
 		const offset: uint<64> = message._msgNonce / 8;
 		const flagPosition: uint<64> = message._msgNonce % 8;
-		const nonceByte: bytes = this.usedNonces(box).extract(offset, 1) as bytes;
-		const nonceUsed: boolean = getbit(nonceByte, flagPosition) as boolean;
+		const nonceByte = this.usedNonces(box).extract(offset, 1) as byte[1];
+		const nonceUsed = getbit(nonceByte, flagPosition) as boolean;
 		assert(!nonceUsed);
 
 		// Mark nonce used
-		const updatedNonceByte: bytes = setbit(nonceByte, flagPosition, 1) as bytes;
+		const updatedNonceByte: byte[1] = setbit(nonceByte, flagPosition, 1) as byte[1];
 		this.usedNonces(box).replace(offset, updatedNonceByte);
 
 		// Handle receive message
-		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
+		const handled: boolean = sendMethodCall<[uint<32>, byte[32], byte[]], boolean>({
 			applicationID: Application.fromID(btoi(message._msgRecipient)),
 			name: 'handleReceiveMessage',
 			methodArgs: [

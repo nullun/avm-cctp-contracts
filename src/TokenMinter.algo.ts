@@ -10,6 +10,7 @@ class TokenMinter extends Contract {
 	 * @param remoteDomain remote domain
 	 * @param remoteToken token on `remoteDomain` corresponding to `localToken`
 	 */
+	// TokenPairLinked(asset,uint32,byte[32])
 	TokenPairLinked = new EventLogger<[
 		Asset,
 		uint<32>,
@@ -22,6 +23,7 @@ class TokenMinter extends Contract {
 	 * @param remoteDomain remote domain
 	 * @param remoteToken token on `remoteDomain` unlinked from `localToken`
 	 */
+	// TokenPairUnlinked(asset,uint32,byte[32])
 	TokenPairUnlinked = new EventLogger<[
 		Asset,
 		uint<32>,
@@ -33,6 +35,7 @@ class TokenMinter extends Contract {
 	 * @param token local token id
 	 * @param burnLimitPerMessage burn limit per message for `token`
 	 */
+	// SetBurnLimitPerMessage(asset,uint64)
 	SetBurnLimitPerMessage = new EventLogger<[
 		Asset,
 		uint<64>
@@ -40,9 +43,10 @@ class TokenMinter extends Contract {
 
 	/**
 	 * @notice Emitted when token controller is set
-	 * @param tokenController token controller id set
+	 * @param tokenController token controller address set
 	 */
-	SetTokenController = new EventLogger<[Application]>();
+	// SetTokenController(address)
+	SetTokenController = new EventLogger<[Address]>();
 
 	// ===== TokenMinter =====
 	/**
@@ -50,14 +54,16 @@ class TokenMinter extends Contract {
 	 * @param localTokenMessenger address of local TokenMessenger
 	 * @notice Emitted when a local TokenMessenger is added
 	 */
-	LocalTokenMessengerAdded = new EventLogger<[Address]>();
+	// LocalTokenMessengerAddress(application)
+	LocalTokenMessengerAdded = new EventLogger<[Application]>();
 
 	/**
 	 * @notice Emitted when a local TokenMessenger is removed
 	 * @param localTokenMessenger address of local TokenMessenger
 	 * @notice Emitted when a local TokenMessenger is removed
 	 */
-	LocalTokenMessengerRemoved = new EventLogger<[Address]>();
+	// LocalTokenMessengerRemoved(application)
+	LocalTokenMessengerRemoved = new EventLogger<[Application]>();
 
 
 	// ============ State Variables ============
@@ -228,7 +234,7 @@ class TokenMinter extends Contract {
 
 		this.remoteTokensToLocalTokens(_remoteTokensKey).delete();
 
-		// TODO: Emit Event TokenPairUnlinked(localToken, remoteDomain, remoteToken);
+		this.TokenPairUnlinked.log(localToken, remoteDomain, remoteToken);
 	}
 
 	/**
@@ -247,7 +253,7 @@ class TokenMinter extends Contract {
 
 		this.burnLimitsPerMessage(localToken).value = burnLimitPerMessage;
 
-		// TODO: Emit Event SetBurnLimitPerMessage(localToken, burnLimitPerMessage);
+		this.SetBurnLimitPerMessage.log(localToken, burnLimitPerMessage);
 	}
 
 	// ===== TokenMinter =====
@@ -327,7 +333,7 @@ class TokenMinter extends Contract {
 
 		this.localTokenMessenger.value = newLocalTokenMessenger;
 
-		// TODO: Emit Event LocalTokenMessengerAdded(localTokenMessenger);
+		this.LocalTokenMessengerAdded.log(newLocalTokenMessenger);
 	}
 
 	/**
@@ -343,7 +349,7 @@ class TokenMinter extends Contract {
 
 		this.localTokenMessenger.delete();
 
-		// TODO: Emit Event LocalTokenMessengerRemoved(_localTokenMessengerBeforeRemoval);
+		this.LocalTokenMessengerRemoved.log(_localTokenMessengerBeforeRemoval);
 	}
 
 	/**
