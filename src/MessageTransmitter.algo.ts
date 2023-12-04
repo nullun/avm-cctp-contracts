@@ -25,7 +25,7 @@ type BurnMessage = {
 
 type SourceDomainNonceBox = {
 	sourceDomain: uint<32>;
-	boxNumber: uint<64>;
+	nonce: uint<64>;
 };
 
 // 65-byte ECDSA signature: v (1) + r (32) + s (32)
@@ -115,7 +115,7 @@ class MessageTransmitter extends Contract {
 
 	// Stores 262,144 nonce flags per box (0 if unused, 1 if used)
 	// nonce / 262144 = box number. nonce / 8 = offset. nonce % 8 = flag position.
-	usedNonces = BoxMap<SourceDomainNonceBox, StaticArray<boolean, 32768>>();
+	usedNonces = BoxMap<SourceDomainNonceBox, byte>();
 
 
 	// ============ Access Checks ============
@@ -524,12 +524,18 @@ class MessageTransmitter extends Contract {
 	 * @return success bool, true if successful
 	 */
 	receiveMessage(
+		fee: PayTxn,
 		message: bytes,
 		attestation: bytes
 	): boolean {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
 		// this._verifyAttestationSignatures(message, attestation);
+
+		verifyPayTxn(fee, {
+			receiver: this.app.address,
+			amount: (2500) + (400 * (12)),
+		});
 
 		const message_start = extract_uint16(message, 0) + 2;
 		const message_size = extract_uint16(message, 2);
@@ -557,36 +563,19 @@ class MessageTransmitter extends Contract {
 		// Validate version
 		assert(_message._msgVersion === this.version.value);
 
-		// Max box size is 1024 * 32.
-		// There are 8 bits per byte, so 262144 bits total.
-		// Since the first position will be used by nonce 0, we need to deduct 1.
-		// TODO: Who pays for this? The user? It's 50 uAlgo per bit. 400 uAlgo per byte.
-		// Each NonceBox would be a total of 12 + 32768 * 400 = 13.107212 Algo
-		// 13107212 / 32768 = 412 uAlgo per transaction to cover the cost of the next box
-		const boxNumber: uint<64> = _message._msgNonce / 262143;
+		// Store each Source Domain + Nonce as a key to a box.
+		// The box contains nothing, but if it exists, then it's been used.
+		// The cost for this is (2500) + (400 * (12)) = 7,300 uAlgo
 		const box: SourceDomainNonceBox = {
 			sourceDomain: _message._msgSourceDomain,
-			boxNumber: boxNumber
+			nonce: _message._msgNonce
 		};
 
-		// If SourceDomainNonceBox exists, resize it by 1, otherwise create it.
-		const box_size = this.usedNonces(box).size;
-		if (box_size) {
-			this.usedNonces(box).resize(box_size+1);
-		} else {
-			this.usedNonces(box).create(1);
-		}
+		// Make sure SourceDomainNonceBox doesn't exists
+		assert(!this.usedNonces(box).exists);
 
-		// Verify nonce is available
-		const offset: uint<64> = _message._msgNonce / 8;
-		const flagPosition: uint<64> = _message._msgNonce % 8;
-		const nonceByte = this.usedNonces(box).extract(offset, 1) as byte[1];
-		const nonceUsed = getbit(nonceByte, flagPosition) as boolean;
-		assert(!nonceUsed);
-
-		// Mark nonce used
-		const updatedNonceByte: byte[1] = setbit(nonceByte, flagPosition, 1) as byte[1];
-		this.usedNonces(box).replace(offset, updatedNonceByte);
+		// Create SourceDomainNonceBox
+		this.usedNonces(box).create(0);
 
 		// Handle receive message
 		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
