@@ -8,9 +8,12 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: byte[]
+	_msgRawBody: bytes
 };
 
+/*
+// We don't really want this referenced in the Message Transmitter.
+// It should be message body agnostic.
 type BurnMessage = {
 	_version: uint<32>,
 	_burnToken: byte[32],
@@ -18,6 +21,7 @@ type BurnMessage = {
 	_amount: uint<256>,
 	_messageSender: byte[32]
 };
+*/
 
 type SourceDomainNonceBox = {
 	sourceDomain: uint<32>;
@@ -68,7 +72,7 @@ class MessageTransmitter extends Contract {
 	 * @param messageBody message body bytes
 	 */
 	// MessageReceived(address,uint32,uint64,byte[32],byte[])
-	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],byte[]]>();
+	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],bytes]>();
 
 	/**
 	 * @notice Emitted when max message body size is updated
@@ -248,15 +252,15 @@ class MessageTransmitter extends Contract {
 		_destinationCaller: byte[32],
 		_sender: byte[32],
 		_nonce: uint<64>,
-		_messageBody: byte[]
+		_messageBody: bytes
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
 		assert(_recipient != globals.zeroAddress as unknown as byte[32]);
 
 		// serialize message
 		const _message: Message = {
-			_msgVersion: this.version.value,
-			_msgSourceDomain: this.localDomain.value,
+			_msgVersion: this.version.value as uint<32>,
+			_msgSourceDomain: this.localDomain.value as uint<32>,
 			_msgDestinationDomain: _destinationDomain,
 			_msgNonce: _nonce,
 			_msgSender: _sender,
@@ -387,7 +391,7 @@ class MessageTransmitter extends Contract {
 	sendMessage(
 		destinationDomain: uint<32>,
 		recipient: byte[32],
-		messageBody: byte[]
+		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
 		const _nonce: uint<64> = this._reserveAndIncrementNonce();
@@ -420,7 +424,7 @@ class MessageTransmitter extends Contract {
 	replaceMessage(
 		originalMessage: Message,
 		originalAttestation: byte[],
-		newMessageBody: byte[],
+		newMessageBody: bytes,
 		newDestinationCaller: byte[32]
 	): void {
 		// TODO: WhenNotPaused
@@ -469,7 +473,7 @@ class MessageTransmitter extends Contract {
 		destinationDomain: uint<32>,
 		recipient: byte[32],
 		destinationCaller: byte[32],
-		messageBody: byte[]
+		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
@@ -520,40 +524,62 @@ class MessageTransmitter extends Contract {
 	 * @return success bool, true if successful
 	 */
 	receiveMessage(
-		message: Message,
-		attestation: byte[]
+		message: bytes,
+		attestation: bytes
 	): boolean {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
 		// this._verifyAttestationSignatures(message, attestation);
 
+		const message_start = extract_uint16(message, 0) + 2;
+		const message_size = extract_uint16(message, 2);
+		const _message = castBytes<Message>(substring3(message, message_start, message_start + message_size));
+
+		/*
+		const message_body_start = extract_uint16(message, message_start + 116) + 4;
+		const message_body_size = extract_uint16(message, message_start + 118);
+		const message_body = substring3(message, message_body_start, message_body_start + message_body_size);
+
+		_message._msgRawBody = message_body;
+		*/
+
 		// Validate message format
-		this._validateMessageFormat(message);
+		this._validateMessageFormat(_message);
 
 		// Validate domain
-		assert(message._msgDestinationDomain === this.localDomain.value);
+		assert(_message._msgDestinationDomain === this.localDomain.value);
 
 		// Validate destination caller
-		if (message._msgDestinationCaller != globals.zeroAddress as unknown as byte[32]) {
-			assert(message._msgDestinationCaller === this.txn.sender as unknown as byte[32]);
+		if (_message._msgDestinationCaller != globals.zeroAddress as unknown as byte[32]) {
+			assert(_message._msgDestinationCaller === this.txn.sender as unknown as byte[32]);
 		}
 
 		// Validate version
-		assert(message._msgVersion === this.version.value);
+		assert(_message._msgVersion === this.version.value);
 
-		// If SourceDomainNonceBox doesn't exist, create it
-		const boxNumber: uint<64> = message._msgNonce / 262144;
+		// Max box size is 1024 * 32.
+		// There are 8 bits per byte, so 262144 bits total.
+		// Since the first position will be used by nonce 0, we need to deduct 1.
+		// TODO: Who pays for this? The user? It's 50 uAlgo per bit. 400 uAlgo per byte.
+		// Each NonceBox would be a total of 12 + 32768 * 400 = 13.107212 Algo
+		// 13107212 / 32768 = 412 uAlgo per transaction to cover the cost of the next box
+		const boxNumber: uint<64> = _message._msgNonce / 262143;
 		const box: SourceDomainNonceBox = {
-			sourceDomain: message._msgSourceDomain,
+			sourceDomain: _message._msgSourceDomain,
 			boxNumber: boxNumber
 		};
-		if (!this.usedNonces(box).exists) {
-			this.usedNonces(box).create(32768);
+
+		// If SourceDomainNonceBox exists, resize it by 1, otherwise create it.
+		const box_size = this.usedNonces(box).size;
+		if (box_size) {
+			this.usedNonces(box).resize(box_size+1);
+		} else {
+			this.usedNonces(box).create(1);
 		}
 
-		// Validate nonce is available
-		const offset: uint<64> = message._msgNonce / 8;
-		const flagPosition: uint<64> = message._msgNonce % 8;
+		// Verify nonce is available
+		const offset: uint<64> = _message._msgNonce / 8;
+		const flagPosition: uint<64> = _message._msgNonce % 8;
 		const nonceByte = this.usedNonces(box).extract(offset, 1) as byte[1];
 		const nonceUsed = getbit(nonceByte, flagPosition) as boolean;
 		assert(!nonceUsed);
@@ -563,13 +589,13 @@ class MessageTransmitter extends Contract {
 		this.usedNonces(box).replace(offset, updatedNonceByte);
 
 		// Handle receive message
-		const handled: boolean = sendMethodCall<[uint<32>, byte[32], byte[]], boolean>({
-			applicationID: Application.fromID(btoi(message._msgRecipient)),
+		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
+			applicationID: Application.fromID(btoi(_message._msgRecipient)),
 			name: 'handleReceiveMessage',
 			methodArgs: [
-				message._msgSourceDomain,
-				message._msgSender,
-				message._msgRawBody
+				_message._msgSourceDomain,
+				_message._msgSender,
+				_message._msgRawBody
 			]
 		});
 		// TODO: If the itxn fails, the whole thing fails, so no need to check?
@@ -577,10 +603,10 @@ class MessageTransmitter extends Contract {
 
 		this.MessageReceived.log(
 			this.txn.sender,
-			message._msgSourceDomain,
-			message._msgNonce,
-			message._msgSender,
-			message._msgRawBody
+			_message._msgSourceDomain,
+			_message._msgNonce,
+			_message._msgSender,
+			_message._msgRawBody
 		);
 
 		return true;

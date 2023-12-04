@@ -8,7 +8,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: byte[]
+	_msgRawBody: BurnMessage
 };
 
 type BurnMessage = {
@@ -225,10 +225,10 @@ class TokenMessenger extends Contract {
 
 		// Format message body
 		const _burnMessage: BurnMessage = {
-			_version: this.messageBodyVersion.value,
+			_version: this.messageBodyVersion.value as uint<32>,
 			_burnToken: concat(bzero(32-len(itob(_burnToken))), itob(_burnToken)) as byte[32],
 			_mintRecipient: _mintRecipient,
-			_amount: <uint<256>>_axfer.assetAmount,
+			_amount: _axfer.assetAmount as uint<256>,
 			_messageSender: rawBytes(this.txn.sender) as byte[32]
 		};
 
@@ -236,13 +236,13 @@ class TokenMessenger extends Contract {
 		    _destinationDomain,
 		    _destinationTokenMessenger,
 		    _destinationCaller,
-		    _burnMessage as unknown as byte[]
+		    rawBytes(_burnMessage) as unknown as byte[]
 		);
 
 		this.DepositForBurn.log(
 			_nonceReserved,
 			_burnToken,
-			<uint<256>>_axfer.assetAmount,
+			_axfer.assetAmount as uint<256>,
 			this.txn.sender,
 			_mintRecipient,
 			_destinationDomain,
