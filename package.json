@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@algorandfoundation/tealscript": "^0.65.0",
-    "algosdk": "^2.7.0"
+    "algosdk": "^2.7.0",
+    "keccak": "^3.0.4"
   }
 }
