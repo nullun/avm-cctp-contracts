@@ -38,6 +38,10 @@ function int2bytes() {
 	echo $(python -c "print('0x' + ($1).to_bytes($2, byteorder='big').hex())")
 }
 
+function addr2bytes() {
+	python -c "import base64; print('[' + ','.join(map(str, bytearray(base64.b32decode('$1' + '='*6)[:32]))) + ']')"
+}
+
 
 # Create FakeUSDC1 and FakeUSDC2
 FUSDC1=$(${GOAL} asset create \
@@ -64,19 +68,32 @@ FUSDC2=$(${GOAL} asset create \
 MTRAN1_ID=$(${GOAL} app method \
 	--create \
 	--from ${ACCT1} \
-	--method "deploy(uint32,address,uint64,uint32)void" \
+	--method "deploy(uint32,uint64,uint32)void" \
 	--approval-prog dist/MessageTransmitter.approval.teal \
 	--clear-prog dist/MessageTransmitter.clear.teal \
 	--global-byteslices 32 --global-ints 32 \
 	--local-byteslices 0 --local-ints 16 \
-	--on-completion "OptIn" \
 	--arg ${DOMAIN1} \
-	--arg \"${ACCT1}\" \
 	--arg 1024 \
 	--arg 0 \
 	| grep 'Created app with app index' \
 	| awk '{print $6}' \
 	| tr -d '\r')
+
+# TODO: Pay MBR on enableAttester
+MTRAN1_ADDR=$(goal app info \
+	--app-id ${MTRAN1_ID} \
+	| grep 'Application account' \
+	| awk '{print $3}' \
+	| tr -d '\r')
+${GOAL} clerk send -a 1000000 -f ${ACCT1} -t ${MTRAN1_ADDR}
+arg1=$(addr2bytes ${ACCT1})
+${GOAL} app method \
+	--app-id ${MTRAN1_ID} \
+	--from ${ACCT1} \
+	--method "enableAttester(byte[32])void" \
+	--arg ${arg1} \
+	--box str:enabledAttesters \
 
 TMSGR1_ID=$(${GOAL} app method \
 	--create \
@@ -109,19 +126,32 @@ TMINT1_ID=$(${GOAL} app method \
 MTRAN2_ID=$(${GOAL} app method \
 	--create \
 	--from ${ACCT1} \
-	--method "deploy(uint32,address,uint64,uint32)void" \
+	--method "deploy(uint32,uint64,uint32)void" \
 	--approval-prog dist/MessageTransmitter.approval.teal \
 	--clear-prog dist/MessageTransmitter.clear.teal \
 	--global-byteslices 32 --global-ints 32 \
 	--local-byteslices 0 --local-ints 16 \
-	--on-completion "OptIn" \
 	--arg ${DOMAIN2} \
-	--arg \"${ACCT1}\" \
 	--arg 1024 \
 	--arg 0 \
 	| grep 'Created app with app index' \
 	| awk '{print $6}' \
 	| tr -d '\r')
+
+# TODO: Pay MBR on enableAttester
+MTRAN2_ADDR=$(goal app info \
+	--app-id ${MTRAN2_ID} \
+	| grep 'Application account' \
+	| awk '{print $3}' \
+	| tr -d '\r')
+${GOAL} clerk send -a 1000000 -f ${ACCT1} -t ${MTRAN2_ADDR}
+arg1=$(addr2bytes ${ACCT1})
+${GOAL} app method \
+	--app-id ${MTRAN2_ID} \
+	--from ${ACCT1} \
+	--method "enableAttester(byte[32])void" \
+	--arg ${arg1} \
+	--box str:enabledAttesters \
 
 TMSGR2_ID=$(${GOAL} app method \
 	--create \

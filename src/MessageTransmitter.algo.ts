@@ -32,6 +32,7 @@ type SourceDomainNonceBox = {
 const signatureLength = 65;
 
 class MessageTransmitter extends Contract {
+	programVersion = 10;
 
 	// ============ Events ============
 	// ===== Ownable =====
@@ -94,10 +95,8 @@ class MessageTransmitter extends Contract {
 	// Attester Manager of the application
 	attesterManager = GlobalStateKey<Address>();
 
-	numAttesters = GlobalStateKey<uint<64>>();
-
 	// Attester Role
-	enabledAttester = LocalStateKey<uint<64>>({ key: 'attester' });
+	enabledAttesters = BoxKey<byte[32][]>();
 
 	// ===== MessageTransmitter =====
 	// Domain of chain on which the application is deployed
@@ -134,6 +133,30 @@ class MessageTransmitter extends Contract {
 	}
 
 
+	// SHOULD NOT BE HERE. MOVE WHEN FIXED
+	/**
+	 * @notice Checks that signature was signed by attester
+	 * @param _digest message hash
+	 * @param _signature message signature
+	 * @return address of recovered signer
+	 */
+	private _recoverAttesterSignature(
+		_digest: byte[32],
+		_signature: byte[]
+	): byte[32] {
+		return rawBytes(globals.zeroAddress) as byte[32];
+		/*
+		// FIX: ECDSA PK RECOVER
+		const r = substring3(_signature, 0, 32) as byte[32];
+		const s = substring3(_signature, 32, 64) as byte[32];
+		const v = getbyte(_signature, 65) as uint<64>;
+		const val = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		return val[1] as unknown as Address;
+		*/
+	}
+	// SHOULD NOT BE HERE. MOVE WHEN FIXED
+
+
 	// ============ Internal Utils ============
 	// ===== Ownable =====
 	/**
@@ -157,24 +180,22 @@ class MessageTransmitter extends Contract {
 	}
 
 	/**
-	 * @notice Checks that signature was signed by attester
-	 * @param _digest message hash
-	 * @param _signature message signature
-	 * @return address of recovered signer
-	 **/
-	private _recoverAttesterSignature(
-		_digest: byte[32],
-		_signature: byte[]
-	): Address {
-		return globals.zeroAddress;
-		/*
-		// FIX: ECDSA PK RECOVER
-		const r = substring3(_signature, 0, 32) as byte[32];
-		const s = substring3(_signature, 32, 64) as byte[32];
-		const v = getbyte(_signature, 65) as uint<64>;
-		const val = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		return val[1] as unknown as Address;
-		*/
+	 * @notice returns true if given `attester` is enabled, else false
+	 * @param attester attester to check enabled status of
+	 * @return true if given `attester` is enabled, else false
+	 */
+	private _isEnabledAttester(attester: byte[32]): boolean {
+		// TODO: Do I need this here?
+		assert(attester != rawBytes(Address.zeroAddress));
+
+		const boxSize = this.enabledAttesters.size;
+		for (let i = 0; i + 2 < boxSize / 32; i = i + 1) {
+			if (attester == this.enabledAttesters.value[i]) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -200,24 +221,24 @@ class MessageTransmitter extends Contract {
 
 		// (Attesters cannot be address(0))
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
-		let _latestAttesterAddress = globals.zeroAddress;
+		let _latestAttesterAddress = rawBytes(globals.zeroAddress);
 
 		const _digest: byte[32] = keccak256(rawBytes(_message));
-	    for (let i: uint<64>; i < this.signatureThreshold.value; i=i+1) {
+	    for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
 			const _signature = substring3(
 				rawBytes(_attestation),
 				i * signatureLength,
 				i * signatureLength + signatureLength
 			);
 
-			const _recoveredAttester: Address = this._recoverAttesterSignature(
+			const _recoveredAttester: byte[32] = this._recoverAttesterSignature(
 				_digest,
 				_signature as unknown as byte[]
 			);
 
 	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
 			assert(_recoveredAttester > _latestAttesterAddress);
-			assert(this.enabledAttester(_recoveredAttester).value);
+			assert(this._isEnabledAttester(_recoveredAttester));
 
 	        _latestAttesterAddress = _recoveredAttester;
 	    }
@@ -255,12 +276,12 @@ class MessageTransmitter extends Contract {
 		_messageBody: bytes
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
-		assert(_recipient != globals.zeroAddress as unknown as byte[32]);
+		assert(_recipient != rawBytes(globals.zeroAddress));
 
 		// serialize message
 		const _message: Message = {
-			_msgVersion: this.version.value as uint<32>,
-			_msgSourceDomain: this.localDomain.value as uint<32>,
+			_msgVersion: this.version.value,
+			_msgSourceDomain: this.localDomain.value,
 			_msgDestinationDomain: _destinationDomain,
 			_msgNonce: _nonce,
 			_msgSender: _sender,
@@ -314,16 +335,54 @@ class MessageTransmitter extends Contract {
 	// ===== Attestable =====
 	/**
 	 * @notice Enables an attester
-	 * @dev Only callable by attesterManager. New attester must be opted in and currently disabled.
+	 * @dev Only callable by attesterManager. New attester must not be attesters.
 	 * @param newAttester attester to enable
 	 */
-	enableAttester(newAttester: Account): void {
+	enableAttester(newAttester: byte[32]): void {
 		this.onlyAttesterManager();
 
-		assert(!this.enabledAttester(newAttester).exists);
+		// Create box if doesn't exist
+		if (!this.enabledAttesters.exists) {
+			this.enabledAttesters.create(2);
+		}
 
-		this.enabledAttester(newAttester).value = 1;
-		this.numAttesters.value = this.numAttesters.value + 1;
+		// Make sure they're not already an attester
+		assert(!this._isEnabledAttester(newAttester));
+
+		const originalSize = this.enabledAttesters.size;
+
+		// Resize box, then splice box
+		// FIX: resize properly
+		// @ts-expect-error Not yet implemented
+		box_resize("enabledAttesters", originalSize + 32);
+
+		// FIX: splice properly
+		// @ts-expect-error Not yet implemented
+		box_splice("enabledAttesters", originalSize, 32, newAttester);
+	}
+
+	/**
+	 * @notice returns the index of a given `attester`, else fails
+	 * @param attester attester to retrieve index of
+	 * @return index of given `attester`, else fails
+	 */
+	indexOfEnabledAttester(attester: byte[32]): uint<64> {
+		const boxSize = this.enabledAttesters.size;
+		for (let i = 2; i < boxSize; i = i + 32) {
+			if (attester == this.enabledAttesters.value[i]) {
+				return i;
+			}
+		}
+		assert(0);
+		return 0;
+	}
+
+	/**
+	 * @notice returns the number of enabled attesters
+	 * @return number of enabled attesters
+	 */
+	getNumEnabledAttesters(): uint64 {
+		return this.enabledAttesters.size / 32;
 	}
 
 	/**
@@ -349,14 +408,26 @@ class MessageTransmitter extends Contract {
 	 * (Attester must be currently enabled.)
 	 * @param attester attester to disable
 	 */
-	disableAttester(attester: Account): void {
+	disableAttester(attester: byte[32]): void {
 		this.onlyAttesterManager();
 
-		assert(this.numAttesters.value > 1);
-		assert(this.numAttesters.value > this.signatureThreshold.value);
-		assert(this.enabledAttester(attester).exists);
+		assert(this.getNumEnabledAttesters() > 1);
+		assert(this.getNumEnabledAttesters() > this.signatureThreshold.value);
 
-		this.enabledAttester(attester).delete();
+		// Make sure they're an attester
+		assert(this._isEnabledAttester(attester));
+
+		// Get index of attester
+		const index = this.indexOfEnabledAttester(attester);
+
+		// FIX: splice properly
+		// @ts-expect-error Not yet implemented
+		box_splice("enabledAttesters", (32 * index) + 2, 32, '');
+
+		// Resize box, then splice box
+		// FIX: resize properly
+		// @ts-expect-error Not yet implemented
+		box_resize("enabledAttesters", this.enabledAttesters.size - 32);
 	}
 
 	/**
@@ -370,7 +441,7 @@ class MessageTransmitter extends Contract {
 		this.onlyAttesterManager();
 
 		assert(newSignatureThreshold);
-		assert(newSignatureThreshold <= this.numAttesters.value);
+		assert(newSignatureThreshold <= this.getNumEnabledAttesters());
 		assert(newSignatureThreshold != this.signatureThreshold.value);
 
 		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
@@ -619,11 +690,10 @@ class MessageTransmitter extends Contract {
 
 
 	// ============ Constructor ============
-	// FIX: _attester must be self, and deployment should be OptIn.
-	@allow.create('OptIn')
+	@allow.create('NoOp')
 	deploy(
 		_localDomain: uint<32>,
-		_attester: Address,
+		//_attester: byte[32], // We cannot write to a box during deployment
 		_maxMessageBodySize: uint<64>,
 		_version: uint<32>
 	): void {
@@ -638,6 +708,5 @@ class MessageTransmitter extends Contract {
 		this._setAttesterManager(this.txn.sender);
 		this.signatureThreshold.value = 1;
 		// FIX: this.enableAttester(_attester);
-		this.enableAttester(this.txn.sender);
 	}
 }
