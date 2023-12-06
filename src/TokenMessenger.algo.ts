@@ -441,21 +441,25 @@ class TokenMessenger extends Contract {
 	handleReceiveMessage(
 		remoteDomain: uint<32>,
 		sender: byte[32],
-		messageBody: BurnMessage
+		messageBody: bytes
 	): boolean {
 		this.onlyLocalMessageTransmitter();
 		this.onlyRemoteTokenMessenger(remoteDomain, sender);
 
-		assert(messageBody._version === this.messageBodyVersion.value);
+		const message_body_start = extract_uint16(messageBody, 0) + 2;
+		const message_body_size = extract_uint16(messageBody, 2);
+		const _messageBody = castBytes<BurnMessage>(substring3(messageBody, message_body_start, message_body_start + message_body_size));
+
+		assert(_messageBody._version === this.messageBodyVersion.value);
 
 		// FIX: Make sure the amount isn't larger than bitlen 16? (uint64, otherwise we're minting much less than was burnt)
 
 		this._mintAndWithdraw(
 			this._getLocalMinter(),
 			remoteDomain,
-			messageBody._burnToken,
-			<Address>(messageBody._mintRecipient as unknown),
-			extract_uint64(rawBytes(messageBody._amount), 24)
+			_messageBody._burnToken,
+			<Address>(_messageBody._mintRecipient as unknown),
+			extract_uint64(rawBytes(_messageBody._amount), 24)
 		);
 
 		return true;

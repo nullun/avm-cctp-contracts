@@ -142,16 +142,18 @@ class MessageTransmitter extends Contract {
 	 */
 	private _recoverAttesterSignature(
 		_digest: byte[32],
-		_signature: byte[]
+		_signature: bytes
 	): byte[32] {
 		return rawBytes(globals.zeroAddress) as byte[32];
 		/*
 		// FIX: ECDSA PK RECOVER
-		const r = substring3(_signature, 0, 32) as byte[32];
-		const s = substring3(_signature, 32, 64) as byte[32];
+		const r = substring3(_signature, 0, 32);
+		const s = substring3(_signature, 32, 64);
 		const v = getbyte(_signature, 65) as uint<64>;
-		const val = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		return val[1] as unknown as Address;
+		const [X, Y] = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		const addr = bzero(12) + substring3(keccak256(concat(rawBytes(X), rawBytes(Y))), 12, 32) as byte[32];
+
+		return addr as byte[32]
 		*/
 	}
 	// SHOULD NOT BE HERE. MOVE WHEN FIXED
@@ -214,8 +216,8 @@ class MessageTransmitter extends Contract {
 	 * @param _attestation attestation of `_message`
 	 */
 	private _verifyAttestationSignatures(
-		_message: byte[],
-		_attestation: byte[]
+		_message: bytes,
+		_attestation: bytes
 	): void {
 		assert(_attestation.length === signatureLength * this.signatureThreshold.value);
 
@@ -233,7 +235,7 @@ class MessageTransmitter extends Contract {
 
 			const _recoveredAttester: byte[32] = this._recoverAttesterSignature(
 				_digest,
-				_signature as unknown as byte[]
+				_signature as unknown as bytes
 			);
 
 	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
@@ -466,7 +468,7 @@ class MessageTransmitter extends Contract {
 	): uint<64> {
 		// TODO: WhenNotPaused
 		const _nonce: uint<64> = this._reserveAndIncrementNonce();
-		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
+		const _messageSender = bzero(24) + rawBytes(globals.callerApplicationID) as byte[32];
 
 		this._sendMessage(
 			destinationDomain,
@@ -550,7 +552,7 @@ class MessageTransmitter extends Contract {
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
 
 		const _nonce: uint<64> = this._reserveAndIncrementNonce();
-		const _messageSender: byte[32] = this.txn.sender as unknown as byte[32];
+		const _messageSender = bzero(24) + rawBytes(globals.callerApplicationID) as byte[32];
 
 		this._sendMessage(
 			destinationDomain,
@@ -650,7 +652,7 @@ class MessageTransmitter extends Contract {
 
 		// Handle receive message
 		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
-			applicationID: Application.fromID(btoi(_message._msgRecipient)),
+			applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24)),
 			name: 'handleReceiveMessage',
 			methodArgs: [
 				_message._msgSourceDomain,
