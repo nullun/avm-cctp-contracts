@@ -34,14 +34,14 @@ const main = async() => {
 	const account2 = accounts[2];
 
 	// Existing application IDs
-	const ASA_AVM1_ID                 = 1007;
-	const ASA_AVM2_ID                 = 1008;
-	const AVM1_MESSAGE_TRANSMITTER_ID = 1009;
-	const AVM1_TOKEN_MESSENGER_ID     = 1012;
-	const AVM1_TOKEN_MINTER_ID        = 1013;
-	const AVM2_MESSAGE_TRANSMITTER_ID = 1014;
-	const AVM2_TOKEN_MESSENGER_ID     = 1017;
-	const AVM2_TOKEN_MINTER_ID        = 1018;
+	const ASA_AVM1_ID                 = 1004;
+	const ASA_AVM2_ID                 = 1005;
+	const AVM1_MESSAGE_TRANSMITTER_ID = 1006;
+	const AVM1_TOKEN_MESSENGER_ID     = 1009;
+	const AVM1_TOKEN_MINTER_ID        = 1010;
+	const AVM2_MESSAGE_TRANSMITTER_ID = 1011;
+	const AVM2_TOKEN_MESSENGER_ID     = 1014;
+	const AVM2_TOKEN_MINTER_ID        = 1015;
 
 	// Create ATC
 	let atc = new algosdk.AtomicTransactionComposer();
@@ -146,12 +146,13 @@ const main = async() => {
 	//console.log(atc.transactions[1].txn);
 
 	const subres = await atc.submit(algod);
-	console.log(subres[0]);
+	console.log(subres[1]);
 	//console.log(atc.getStatus());
 	//const simres2 = await atc.simulate(algod);
 	//console.log(simres2);
 	console.log("STEP 2: DONE");
 
+	/*
 	// STEP 3: Retrieve message bytes from logs
 	const status = await algod.pendingTransactionInformation(subres[1]).do();
 	let messageBody;
@@ -193,6 +194,7 @@ const main = async() => {
 	console.log(attestationResponse);
 	const signature = attestationResponse.signature;
 	console.log("STEP 4: DONE")
+	*/
 
 	// STEP 5: Using the message bytes and signature recieve the funds on destination chain and address
 	// Get Suggested Parameters for transactions

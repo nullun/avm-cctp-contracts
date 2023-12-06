@@ -62,7 +62,7 @@ class MessageTransmitter extends Contract {
 	 * @param message Raw bytes of message
 	 */
 	// MessageSent(byte[])
-	MessageSent = new EventLogger<[byte[]]>();
+	MessageSent = new EventLogger<[bytes]>();
 
 	/**
 	 * @notice Emitted when a new message is received
@@ -292,7 +292,7 @@ class MessageTransmitter extends Contract {
 			_msgRawBody: _messageBody
 		};
 
-		this.MessageSent.log(_message as unknown as byte[]);
+		this.MessageSent.log(rawBytes(_message));
 	}
 
 	/**
@@ -496,7 +496,7 @@ class MessageTransmitter extends Contract {
 	 */
 	replaceMessage(
 		originalMessage: Message,
-		originalAttestation: byte[],
+		originalAttestation: bytes,
 		newMessageBody: bytes,
 		newDestinationCaller: byte[32]
 	): void {

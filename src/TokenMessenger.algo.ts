@@ -141,10 +141,10 @@ class TokenMessenger extends Contract {
 		_destinationDomain: uint<32>,
 		_destinationTokenMessenger: byte[32],
 		_destinationCaller: byte[32],
-		_burnMessage: byte[]
+		_burnMessage: bytes
 	): uint<64> {
 		if (_destinationCaller === bzero(32)) {
-			return sendMethodCall<[uint<32>, byte[32], byte[]], uint<64>>({
+			return sendMethodCall<[uint<32>, byte[32], bytes], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessage',
 				methodArgs: [
@@ -154,7 +154,7 @@ class TokenMessenger extends Contract {
 				]
 			});
 		} else {
-			return sendMethodCall<[uint<32>, byte[32], byte[32], byte[]], uint<64>>({
+			return sendMethodCall<[uint<32>, byte[32], byte[32], bytes], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessageWithCaller',
 				methodArgs: [
@@ -236,7 +236,7 @@ class TokenMessenger extends Contract {
 		    _destinationDomain,
 		    _destinationTokenMessenger,
 		    _destinationCaller,
-		    rawBytes(_burnMessage) as unknown as byte[]
+		    rawBytes(_burnMessage)
 		);
 
 		this.DepositForBurn.log(
@@ -381,7 +381,7 @@ class TokenMessenger extends Contract {
 	 */
 	replaceDepositForBurn(
 	    originalMessage: Message,
-	    originalAttestation: byte[],
+	    originalAttestation: bytes,
 	    newDestinationCaller: byte[32],
 	    newMintRecipient: byte[32]
 	): void {
@@ -404,13 +404,13 @@ class TokenMessenger extends Contract {
 			_messageSender: _originalMsgSender
 		};
 
-		sendMethodCall<[byte[], byte[], byte[], byte[32]], void>({
+		sendMethodCall<[bytes, bytes, bytes, byte[32]], void>({
 			applicationID: this.localMessageTransmitter.value,
 			name: 'replaceMessage',
 			methodArgs: [
-				originalMessage as unknown as byte[],
+				rawBytes(originalMessage),
 				originalAttestation,
-				newMessageBody as unknown as byte[],
+				rawBytes(newMessageBody),
 				newDestinationCaller
 			]
 		});
