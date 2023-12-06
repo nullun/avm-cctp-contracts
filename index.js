@@ -37,11 +37,11 @@ const main = async() => {
 	const ASA_AVM1_ID                 = 1007;
 	const ASA_AVM2_ID                 = 1008;
 	const AVM1_MESSAGE_TRANSMITTER_ID = 1009;
-	const AVM1_TOKEN_MESSENGER_ID     = 1010;
-	const AVM1_TOKEN_MINTER_ID        = 1011;
-	const AVM2_MESSAGE_TRANSMITTER_ID = 1012;
-	const AVM2_TOKEN_MESSENGER_ID     = 1013;
-	const AVM2_TOKEN_MINTER_ID        = 1014;
+	const AVM1_TOKEN_MESSENGER_ID     = 1012;
+	const AVM1_TOKEN_MINTER_ID        = 1013;
+	const AVM2_MESSAGE_TRANSMITTER_ID = 1014;
+	const AVM2_TOKEN_MESSENGER_ID     = 1017;
+	const AVM2_TOKEN_MINTER_ID        = 1018;
 
 	// Create ATC
 	let atc = new algosdk.AtomicTransactionComposer();
