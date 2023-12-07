@@ -116,6 +116,7 @@ class TokenMinter extends Contract {
 	 * @notice Only accept messages from the registered message transmitter on local domain
 	 */
 	private onlyLocalTokenMessenger(): void {
+		// FIX: globals.callerApplicationAddress instead of this.txn.sender?
 		assert(this.txn.sender === this.localTokenMessenger.value.address);
 	}
 

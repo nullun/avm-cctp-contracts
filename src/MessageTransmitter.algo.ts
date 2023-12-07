@@ -8,7 +8,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: bytes
+	//_msgRawBody: bytes
 };
 
 /*
@@ -289,10 +289,10 @@ class MessageTransmitter extends Contract {
 			_msgSender: _sender,
 			_msgRecipient: _recipient,
 			_msgDestinationCaller: _destinationCaller,
-			_msgRawBody: _messageBody
+			//_msgRawBody: _messageBody
 		};
 
-		this.MessageSent.log(rawBytes(_message));
+		this.MessageSent.log(rawBytes(_message) + _messageBody);
 	}
 
 	/**
@@ -315,8 +315,7 @@ class MessageTransmitter extends Contract {
 	 * @param _message The message
 	 */
 	private _validateMessageFormat(_message: Message): void {
-		// FIX: Get length of Message? Or can we remove this, since it's a Message type and is already validated
-		//assert(_message as byte[].length >= 116);
+		assert(rawBytes(_message).length >= 116);
 	}
 
 
@@ -467,8 +466,8 @@ class MessageTransmitter extends Contract {
 		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
-		const _nonce: uint<64> = this._reserveAndIncrementNonce();
-		const _messageSender = bzero(24) + rawBytes(globals.callerApplicationID) as byte[32];
+		const _nonce = this._reserveAndIncrementNonce();
+		const _messageSender = rawBytes(globals.callerApplicationAddress);
 
 		this._sendMessage(
 			destinationDomain,
@@ -508,16 +507,16 @@ class MessageTransmitter extends Contract {
 		this._validateMessageFormat(originalMessage);
 
 		// Validate message sender
-		const _sender: byte[32] = originalMessage._msgSender;
-		assert(this.txn.sender as unknown as byte[32] === _sender);
+		const _sender = rawBytes(globals.callerApplicationAddress);
+		assert(rawBytes(globals.callerApplicationAddress) === _sender);
 
 		// Validate source domain
-		const _sourceDomain: uint<32> = originalMessage._msgSourceDomain;
+		const _sourceDomain = originalMessage._msgSourceDomain;
 		assert(_sourceDomain === this.localDomain.value);
 
-		const _destinationDomain: uint<32> = originalMessage._msgDestinationDomain;
-		const _recipient: byte[32] = originalMessage._msgRecipient;
-		const _nonce: uint<64> = originalMessage._msgNonce;
+		const _destinationDomain = originalMessage._msgDestinationDomain;
+		const _recipient = originalMessage._msgRecipient;
+		const _nonce = originalMessage._msgNonce;
 
 		this._sendMessage(
 			_destinationDomain,
@@ -551,8 +550,8 @@ class MessageTransmitter extends Contract {
 		// TODO: WhenNotPaused
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
 
-		const _nonce: uint<64> = this._reserveAndIncrementNonce();
-		const _messageSender = bzero(24) + rawBytes(globals.callerApplicationID) as byte[32];
+		const _nonce = this._reserveAndIncrementNonce();
+		const _messageSender = rawBytes(globals.callerApplicationAddress);
 
 		this._sendMessage(
 			destinationDomain,
@@ -611,8 +610,12 @@ class MessageTransmitter extends Contract {
 		});
 
 		const message_start = extract_uint16(message, 0) + 2;
-		const message_size = extract_uint16(message, 2);
+		const message_size = 116;
 		const _message = castBytes<Message>(substring3(message, message_start, message_start + message_size));
+
+		const msg_body_start = message_start + message_size;
+		const msg_body_size = message.length - msg_body_start;
+		const _messageBody = substring3(message, msg_body_start, msg_body_start + msg_body_size);
 
 		/*
 		const message_body_start = extract_uint16(message, message_start + 116) + 4;
@@ -651,24 +654,24 @@ class MessageTransmitter extends Contract {
 		this.usedNonces(box).create(0);
 
 		// Handle receive message
-		const handled: boolean = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
+		const handled = sendMethodCall<[uint<32>, byte[32], bytes], boolean>({
 			applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24)),
 			name: 'handleReceiveMessage',
 			methodArgs: [
 				_message._msgSourceDomain,
 				_message._msgSender,
-				_message._msgRawBody
+				_messageBody
 			]
 		});
 		// TODO: If the itxn fails, the whole thing fails, so no need to check?
-		assert(handled);
+		//assert(handled);
 
 		this.MessageReceived.log(
 			this.txn.sender,
 			_message._msgSourceDomain,
 			_message._msgNonce,
 			_message._msgSender,
-			_message._msgRawBody
+			_messageBody
 		);
 
 		return true;

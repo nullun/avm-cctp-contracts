@@ -175,7 +175,7 @@ class TokenMessenger extends Contract {
 	private _getRemoteTokenMessenger(
 		_domain: uint<32>
 	): byte[32] {
-		const _tokenMessenger: byte[32] = this.remoteTokenMessengers(_domain).value as byte[32];
+		const _tokenMessenger = this.remoteTokenMessengers(_domain).value;
 
 		assert(_tokenMessenger !== bzero(32));
 
@@ -380,24 +380,25 @@ class TokenMessenger extends Contract {
 	 * original mint recipient, or different.
 	 */
 	replaceDepositForBurn(
-	    originalMessage: Message,
+	    originalMessage: bytes,
 	    originalAttestation: bytes,
 	    newDestinationCaller: byte[32],
 	    newMintRecipient: byte[32]
 	): void {
-		const _originalMsg: Message = originalMessage;
-		const _originalMsgBody: BurnMessage = _originalMsg._msgRawBody as unknown as BurnMessage;
+		const msgLength = originalMessage.length;
+		const _originalMsg = castBytes<Message>(originalMessage);
+		const _originalMsgBody = castBytes<BurnMessage>(substring3(originalMessage, 116, msgLength));
 
-		const _originalMsgSender: byte[32] = _originalMsgBody._messageSender;
+		const _originalMsgSender = _originalMsgBody._messageSender;
 		// _originalMsgSender must match msg.sender of original message
-		assert(this.txn.sender as unknown as byte[32] === _originalMsgSender);
+		assert(rawBytes(globals.callerApplicationAddress) === _originalMsgSender);
 		assert(newMintRecipient !== bzero(32));
 
-		const _burnToken: Asset = btoi(_originalMsgBody._burnToken) as unknown as Asset;
-		const _amount: uint<256> = _originalMsgBody._amount;
+		const _burnToken = Asset.fromID(btoi(_originalMsgBody._burnToken));
+		const _amount = _originalMsgBody._amount;
 
 		const newMessageBody: BurnMessage = {
-			_version: this.messageBodyVersion.value as uint<32>,
+			_version: this.messageBodyVersion.value,
 			_burnToken: itob(_burnToken) as byte[32],
 			_mintRecipient: newMintRecipient,
 			_amount: _amount,
@@ -446,9 +447,12 @@ class TokenMessenger extends Contract {
 		this.onlyLocalMessageTransmitter();
 		this.onlyRemoteTokenMessenger(remoteDomain, sender);
 
+		/*
 		const message_body_start = extract_uint16(messageBody, 0) + 2;
 		const message_body_size = extract_uint16(messageBody, 2);
 		const _messageBody = castBytes<BurnMessage>(substring3(messageBody, message_body_start, message_body_start + message_body_size));
+		*/
+		const _messageBody = castBytes<BurnMessage>(messageBody);
 
 		assert(_messageBody._version === this.messageBodyVersion.value);
 
@@ -458,7 +462,7 @@ class TokenMessenger extends Contract {
 			this._getLocalMinter(),
 			remoteDomain,
 			_messageBody._burnToken,
-			<Address>(_messageBody._mintRecipient as unknown),
+			Address.fromBytes(_messageBody._mintRecipient),
 			extract_uint64(rawBytes(_messageBody._amount), 24)
 		);
 
