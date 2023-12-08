@@ -225,7 +225,7 @@ class MessageTransmitter extends Contract {
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
 		let _latestAttesterAddress = rawBytes(globals.zeroAddress);
 
-		const _digest: byte[32] = keccak256(rawBytes(_message));
+		const _digest = keccak256(rawBytes(_message));
 	    for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
 			const _signature = substring3(
 				rawBytes(_attestation),
@@ -233,6 +233,8 @@ class MessageTransmitter extends Contract {
 				i * signatureLength + signatureLength
 			);
 
+			// TODO: Fix _recoverAttesterSignature
+			/*
 			const _recoveredAttester: byte[32] = this._recoverAttesterSignature(
 				_digest,
 				_signature as unknown as bytes
@@ -243,6 +245,7 @@ class MessageTransmitter extends Contract {
 			assert(this._isEnabledAttester(_recoveredAttester));
 
 	        _latestAttesterAddress = _recoveredAttester;
+			*/
 	    }
 	}
 
@@ -367,7 +370,7 @@ class MessageTransmitter extends Contract {
 	 * @param attester attester to retrieve index of
 	 * @return index of given `attester`, else fails
 	 */
-	indexOfEnabledAttester(attester: byte[32]): uint<64> {
+	offsetOfEnabledAttester(attester: byte[32]): uint<64> {
 		const boxSize = this.enabledAttesters.size;
 		for (let i = 2; i < boxSize; i = i + 32) {
 			if (attester == this.enabledAttesters.value[i]) {
@@ -419,7 +422,7 @@ class MessageTransmitter extends Contract {
 		assert(this._isEnabledAttester(attester));
 
 		// Get index of attester
-		const index = this.indexOfEnabledAttester(attester);
+		const index = this.offsetOfEnabledAttester(attester);
 
 		// FIX: splice properly
 		// @ts-expect-error Not yet implemented
@@ -494,29 +497,33 @@ class MessageTransmitter extends Contract {
 	 * destination caller (bytes32(0), indicating that any destination caller is valid.)
 	 */
 	replaceMessage(
-		originalMessage: Message,
+		originalMessage: bytes,
 		originalAttestation: bytes,
 		newMessageBody: bytes,
 		newDestinationCaller: byte[32]
 	): void {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
-		// this._verifyAttestationSignatures(originalMessage, originalAttestation);
+		this._verifyAttestationSignatures(originalMessage, originalAttestation);
+
+		const message_start = extract_uint16(originalMessage, 0) + 2;
+		const message_size = 116;
+		const _message = castBytes<Message>(substring3(originalMessage, message_start, message_start + message_size));
 
 		// Validate message format
-		this._validateMessageFormat(originalMessage);
+		this._validateMessageFormat(_message);
 
 		// Validate message sender
 		const _sender = rawBytes(globals.callerApplicationAddress);
 		assert(rawBytes(globals.callerApplicationAddress) === _sender);
 
 		// Validate source domain
-		const _sourceDomain = originalMessage._msgSourceDomain;
+		const _sourceDomain = _message._msgSourceDomain;
 		assert(_sourceDomain === this.localDomain.value);
 
-		const _destinationDomain = originalMessage._msgDestinationDomain;
-		const _recipient = originalMessage._msgRecipient;
-		const _nonce = originalMessage._msgNonce;
+		const _destinationDomain = _message._msgDestinationDomain;
+		const _recipient = _message._msgRecipient;
+		const _nonce = _message._msgNonce;
 
 		this._sendMessage(
 			_destinationDomain,
@@ -602,7 +609,7 @@ class MessageTransmitter extends Contract {
 	): boolean {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
-		// this._verifyAttestationSignatures(message, attestation);
+		this._verifyAttestationSignatures(message, attestation);
 
 		verifyPayTxn(fee, {
 			receiver: this.app.address,
