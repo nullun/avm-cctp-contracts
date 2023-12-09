@@ -144,7 +144,7 @@ class MessageTransmitter extends Contract {
 		_digest: byte[32],
 		_signature: bytes
 	): byte[32] {
-		return rawBytes(globals.zeroAddress) as byte[32];
+		return bzero(32) as byte[32];
 		/*
 		// FIX: ECDSA PK RECOVER
 		const r = substring3(_signature, 0, 32);
@@ -233,11 +233,19 @@ class MessageTransmitter extends Contract {
 				i * signatureLength + signatureLength
 			);
 
+			// Need at least 2000 Opcode budget
+			while (globals.opcodeBudget < 2500) {
+				sendAppCall({
+					onCompletion: "DeleteApplication",
+					approvalProgram: "CoEB",
+					clearStateProgram: "CoEB"
+				});
+			}
+
 			// TODO: Fix _recoverAttesterSignature
-			/*
 			const _recoveredAttester: byte[32] = this._recoverAttesterSignature(
 				_digest,
-				_signature as unknown as bytes
+				_signature
 			);
 
 	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
@@ -245,7 +253,6 @@ class MessageTransmitter extends Contract {
 			assert(this._isEnabledAttester(_recoveredAttester));
 
 	        _latestAttesterAddress = _recoveredAttester;
-			*/
 	    }
 	}
 
