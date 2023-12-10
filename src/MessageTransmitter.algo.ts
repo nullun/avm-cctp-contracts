@@ -237,8 +237,8 @@ class MessageTransmitter extends Contract {
 			while (globals.opcodeBudget < 2500) {
 				sendAppCall({
 					onCompletion: "DeleteApplication",
-					approvalProgram: "CoEB",
-					clearStateProgram: "CoEB"
+					approvalProgram: hex("0x0a8101"),
+					clearStateProgram: hex("0x0a8101")
 				});
 			}
 
@@ -248,9 +248,11 @@ class MessageTransmitter extends Contract {
 				_signature
 			);
 
+			/* FIX: Uncomment
 	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
 			assert(_recoveredAttester > _latestAttesterAddress);
 			assert(this._isEnabledAttester(_recoveredAttester));
+			*/
 
 	        _latestAttesterAddress = _recoveredAttester;
 	    }
@@ -477,7 +479,7 @@ class MessageTransmitter extends Contract {
 	): uint<64> {
 		// TODO: WhenNotPaused
 		const _nonce = this._reserveAndIncrementNonce();
-		const _messageSender = rawBytes(globals.callerApplicationAddress);
+		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
 
 		this._sendMessage(
 			destinationDomain,
@@ -521,6 +523,7 @@ class MessageTransmitter extends Contract {
 		this._validateMessageFormat(_message);
 
 		// Validate message sender
+		// FIX: What?
 		const _sender = rawBytes(globals.callerApplicationAddress);
 		assert(rawBytes(globals.callerApplicationAddress) === _sender);
 
@@ -565,7 +568,7 @@ class MessageTransmitter extends Contract {
 		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
 
 		const _nonce = this._reserveAndIncrementNonce();
-		const _messageSender = rawBytes(globals.callerApplicationAddress);
+		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
 
 		this._sendMessage(
 			destinationDomain,

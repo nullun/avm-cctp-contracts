@@ -1,14 +1,5 @@
 import algosdk from 'algosdk';
- import keccak from 'keccak';
-
-/**
- * TODO:
- *  + Deployment script
- *  + Use consistent application and asset IDs
- *  + Use accounts with balances
- *  + Implement step 3 with a decent EventLogger parsing
- *  + Implement step 5 (same chain different deployments for now)
- */
+import keccak from 'keccak';
 
 const messageTransmitterAbi = require('./dist/MessageTransmitter.arc4.json');
 const tokenMessengerAbi = require('./dist/TokenMessenger.arc4.json');
@@ -58,14 +49,11 @@ const main = async() => {
 	// Amount that will be transferred
 	let amount = 10000000; // 10.000000
 
-	// Get Suggested Parameters for transactions
-	const axfer_sp = await algod.getTransactionParams().do();
-	axfer_sp.flatFee = true;
-	axfer_sp.fee = 0;
+	// Get Suggested Parameters for axfer
+	const step1_axfer_sp = await algod.getTransactionParams().do();
+	step1_axfer_sp.flatFee = true;
+	step1_axfer_sp.fee = 1000;
 
-	// TODO: Do I want to send direct to reserve rather than token minter?
-	// Retrieve Asset reserve address
-	//const ASA_RESERVE_ADDRESS = (await algod.getAssetByID(ASA_AVM1_ID).do())['params']['reserve'];
 	// Retrieve TokenMinter address
 	const TMINT_ADDRESS = algosdk.getApplicationAddress(AVM1_TOKEN_MINTER_ID);
 
@@ -75,16 +63,16 @@ const main = async() => {
 		to: TMINT_ADDRESS,
 		assetIndex: ASA_AVM1_ID,
 		amount: amount,
-		suggestedParams: axfer_sp
+		suggestedParams: step1_axfer_sp
 	});
 	console.log("STEP 1: DONE");
 
-	// Get Suggested Parameters for transactions
-	const appl_sp = await algod.getTransactionParams().do();
-	appl_sp.flatFee = true;
-	appl_sp.fee = 10000;
-
 	// STEP 2: Burn ASSET
+	// Get Suggested Parameters for appl
+	const step1_appl_sp = await algod.getTransactionParams().do();
+	step1_appl_sp.flatFee = true;
+	step1_appl_sp.fee = 5000;
+
 	// Simulate
 	atc.addMethodCall({
 		sender: account1.addr,
@@ -96,10 +84,9 @@ const main = async() => {
 			algosdk.decodeAddress(mintRecipient).publicKey,
 			ASA_AVM1_ID
 		],
-		suggestedParams: appl_sp,
+		suggestedParams: step1_appl_sp,
 		signer: chain1Signer
 	});
-	//const res = await atc.submit(algod);
 	const simulate = new algosdk.modelsv2.SimulateRequest({
 		execTraceConfig: new algosdk.modelsv2.SimulateTraceConfig({
 			enable: false,
@@ -116,7 +103,7 @@ const main = async() => {
 		to: TMINT_ADDRESS,
 		assetIndex: ASA_AVM1_ID,
 		amount: amount,
-		suggestedParams: axfer_sp
+		suggestedParams: step1_axfer_sp
 	});
 	atc = new algosdk.AtomicTransactionComposer();
 	atc.addMethodCall({
@@ -139,20 +126,14 @@ const main = async() => {
 			simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.assetHoldings[0].asset
 		],
 		boxes: simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.boxes.map((b) => ({appIndex: b.app, name: b.name})),
-		suggestedParams: appl_sp,
+		suggestedParams: step1_appl_sp,
 		signer: chain1Signer
 	});
-	//console.log(simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed);
-	//console.log(atc.transactions[1].txn);
 
-	const subres = await atc.submit(algod);
+	let subres = await atc.submit(algod);
 	console.log(subres[1]);
-	//console.log(atc.getStatus());
-	//const simres2 = await atc.simulate(algod);
-	//console.log(simres2);
 	console.log("STEP 2: DONE");
 
-	/*
 	// STEP 3: Retrieve message bytes from logs
 	const status = await algod.pendingTransactionInformation(subres[1]).do();
 	let messageBody;
@@ -194,35 +175,86 @@ const main = async() => {
 	console.log(attestationResponse);
 	const signature = attestationResponse.signature;
 	console.log("STEP 4: DONE")
-	*/
 
 	// STEP 5: Using the message bytes and signature recieve the funds on destination chain and address
 	// Get Suggested Parameters for transactions
-	/*
-	const step5_sp = await algod.getTransactionParams().do();
-	step5_sp.flatFee = true;
-	step5_sp.fee = 10000;
+	const step5_fee_sp = await algod.getTransactionParams().do();
+	step5_fee_sp.flatFee = true;
+	step5_fee_sp.fee = 1000;
 
-	console.log(messageBody);
-	console.log(Buffer.from(messageBody, 'hex'));
-	console.log(new Uint8Array(Buffer.from(messageBody, 'hex')));
+	const step5_step1_appl_sp = await algod.getTransactionParams().do();
+	step5_step1_appl_sp.flatFee = true;
+	step5_step1_appl_sp.fee = 10000;
 
+	const MTRAN2_ADDRESS = algosdk.getApplicationAddress(AVM2_MESSAGE_TRANSMITTER_ID);
+
+	// Simulate
+	let fees = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+		from: account2.addr,
+		to: MTRAN2_ADDRESS,
+		amount: 7300,
+		suggestedParams: step5_fee_sp
+	});
 	atc = new algosdk.AtomicTransactionComposer();
+	const chain2Signer = new algosdk.makeBasicAccountTransactionSigner(account2);
 	atc.addMethodCall({
-		sender: account1.addr,
-		appID: AVM2_TOKEN_MESSENGER_ID,
+		sender: account2.addr,
+		appID: AVM2_MESSAGE_TRANSMITTER_ID,
 		method: MessageContract.getMethodByName('receiveMessage'),
 		methodArgs: [
+			{ txn: fees, signer: chain2Signer },
 			new Uint8Array(Buffer.from(messageBody, 'hex')),
 			signature
 		],
-		suggestedParams: step5_sp,
-		signer: chain1Signer
+		suggestedParams: step5_step1_appl_sp,
+		signer: chain2Signer
 	});
-	simres = atc.simulate(algod);
-	console.log(simres);
+	simres = await atc.simulate(algod, simulate);
+	//console.log(simres.simulateResponse);
+
+	const appAddrs = [
+		algosdk.getApplicationAddress(AVM2_MESSAGE_TRANSMITTER_ID),
+		algosdk.getApplicationAddress(AVM2_TOKEN_MESSENGER_ID),
+		algosdk.getApplicationAddress(AVM2_TOKEN_MINTER_ID),
+	];
+	const appAccounts = [];
+	simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.assetHoldings.forEach((ah) => {
+		if (appAddrs.includes(ah.account)) return;
+		if (account2.addr == ah.account) return;
+		appAccounts.push(ah.account);
+	});
+
+	// Build
+	fees = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+		from: account2.addr,
+		to: MTRAN2_ADDRESS,
+		amount: 7300,
+		suggestedParams: step5_fee_sp
+	});
+	atc = new algosdk.AtomicTransactionComposer();
+	atc.addMethodCall({
+		sender: account2.addr,
+		appID: AVM2_MESSAGE_TRANSMITTER_ID,
+		method: MessageContract.getMethodByName('receiveMessage'),
+		methodArgs: [
+			{ txn: fees, signer: chain2Signer },
+			new Uint8Array(Buffer.from(messageBody, 'hex')),
+			signature
+		],
+		appAccounts: appAccounts,
+		appForeignApps: [
+			...simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.apps
+		],
+		appForeignAssets: [
+			simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.assetHoldings[0].asset
+		],
+		boxes: simres.simulateResponse.txnGroups[0].unnamedResourcesAccessed.boxes.map((b) => ({appIndex: b.app, name: b.name})),
+		suggestedParams: step5_step1_appl_sp,
+		signer: chain2Signer
+	});
+	subres = await atc.submit(algod);
+	console.log(subres[1]);
 	console.log("STEP 5: TODO")
-	*/
 };
 
 main()

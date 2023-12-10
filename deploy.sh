@@ -206,24 +206,24 @@ ${GOAL} app method \
 	--arg ${TMINT2_ID}
 
 # addRemoteTokenMessenger
-arg2=$(addr2bytes ${TMSGR2_ADDR})
+arg2=$(int2bytes ${TMSGR2_ID} 32 | xxd -r -p -c0 | base64)
 box=$(int2bytes ${DOMAIN2} 4 | xxd -r -p -c0 | base64)
 ${GOAL} app method \
 	--app-id ${TMSGR1_ID} \
 	--from ${ACCT1} \
 	--method "addRemoteTokenMessenger(uint32,byte[32])void" \
 	--arg ${DOMAIN2} \
-	--arg ${arg2} \
+	--arg \"${arg2}\" \
 	--box b64:${box}
 
-arg2=$(addr2bytes ${TMSGR1_ADDR})
+arg2=$(int2bytes ${TMSGR1_ID} 32 | xxd -r -p -c0 | base64)
 box=$(int2bytes ${DOMAIN1} 4 | xxd -r -p -c0 | base64)
 ${GOAL} app method \
 	--app-id ${TMSGR2_ID} \
 	--from ${ACCT1} \
 	--method "addRemoteTokenMessenger(uint32,byte[32])void" \
 	--arg ${DOMAIN1} \
-	--arg ${arg2} \
+	--arg \"${arg2}\" \
 	--box b64:${box}
 
 # addLocalTokenMessenger
