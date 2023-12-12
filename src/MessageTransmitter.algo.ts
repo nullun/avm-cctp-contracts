@@ -1,4 +1,4 @@
-import { Contract } from '@algorandfoundation/tealscript';
+import { Contract } from '../../algorandfoundation/tealscript/src/lib/index';
 
 type Message = {
 	_msgVersion: uint<32>,
@@ -144,17 +144,15 @@ class MessageTransmitter extends Contract {
 		_digest: byte[32],
 		_signature: bytes
 	): byte[32] {
-		return bzero(32) as byte[32];
-		/*
 		// FIX: ECDSA PK RECOVER
-		const r = substring3(_signature, 0, 32);
-		const s = substring3(_signature, 32, 64);
+		const r = substring3(_signature, 0, 32) as byte[32];
+		const s = substring3(_signature, 32, 64) as byte[32];
 		const v = getbyte(_signature, 65) as uint<64>;
-		const [X, Y] = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		const addr = bzero(12) + substring3(keccak256(concat(rawBytes(X), rawBytes(Y))), 12, 32) as byte[32];
+		// FIX: Extremely inefficient, extracting and concatting the same thing.
+		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		const addr = bzero(12) + substring3(keccak256(res[0] + res[1]), 12, 32) as byte[32];
 
 		return addr as byte[32]
-		*/
 	}
 	// SHOULD NOT BE HERE. MOVE WHEN FIXED
 
@@ -188,7 +186,7 @@ class MessageTransmitter extends Contract {
 	 */
 	private _isEnabledAttester(attester: byte[32]): boolean {
 		// TODO: Do I need this here?
-		assert(attester != rawBytes(Address.zeroAddress));
+		assert(attester != bzero(32) as byte[32]);
 
 		const boxSize = this.enabledAttesters.size;
 		for (let i = 0; i + 2 < boxSize / 32; i = i + 1) {
@@ -223,7 +221,7 @@ class MessageTransmitter extends Contract {
 
 		// (Attesters cannot be address(0))
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
-		let _latestAttesterAddress = rawBytes(globals.zeroAddress);
+		let _latestAttesterAddress = bzero(32) as byte[32];
 
 		const _digest = keccak256(rawBytes(_message));
 	    for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
@@ -236,7 +234,7 @@ class MessageTransmitter extends Contract {
 			// Need at least 2000 Opcode budget
 			while (globals.opcodeBudget < 2500) {
 				sendAppCall({
-					onCompletion: "DeleteApplication",
+					onCompletion: 'DeleteApplication',
 					approvalProgram: hex("0x0a8101"),
 					clearStateProgram: hex("0x0a8101")
 				});
@@ -290,7 +288,7 @@ class MessageTransmitter extends Contract {
 		_messageBody: bytes
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
-		assert(_recipient != rawBytes(globals.zeroAddress));
+		assert(_recipient != bzero(32));
 
 		// serialize message
 		const _message: Message = {
@@ -484,7 +482,7 @@ class MessageTransmitter extends Contract {
 		this._sendMessage(
 			destinationDomain,
 			recipient,
-			globals.zeroAddress as unknown as byte[32],
+			bzero(32) as byte[32],
 			_messageSender,
 			_nonce,
 			messageBody
@@ -565,7 +563,7 @@ class MessageTransmitter extends Contract {
 		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
-		assert(destinationCaller != globals.zeroAddress as unknown as byte[32]);
+		assert(destinationCaller != bzero(32) as byte[32]);
 
 		const _nonce = this._reserveAndIncrementNonce();
 		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
@@ -649,8 +647,8 @@ class MessageTransmitter extends Contract {
 		assert(_message._msgDestinationDomain === this.localDomain.value);
 
 		// Validate destination caller
-		if (_message._msgDestinationCaller != globals.zeroAddress as unknown as byte[32]) {
-			assert(_message._msgDestinationCaller === this.txn.sender as unknown as byte[32]);
+		if (_message._msgDestinationCaller != bzero(32) as byte[32]) {
+			assert(_message._msgDestinationCaller === rawBytes(this.txn.sender) as byte[32]);
 		}
 
 		// Validate version
