@@ -71,6 +71,7 @@ MTRAN1_ID=$(${GOAL} app method \
 	--method "deploy(uint32,uint64,uint32)void" \
 	--approval-prog dist/MessageTransmitter.approval.teal \
 	--clear-prog dist/MessageTransmitter.clear.teal \
+	--extra-pages 1 \
 	--global-byteslices 32 --global-ints 32 \
 	--local-byteslices 0 --local-ints 16 \
 	--arg ${DOMAIN1} \
@@ -129,6 +130,7 @@ MTRAN2_ID=$(${GOAL} app method \
 	--method "deploy(uint32,uint64,uint32)void" \
 	--approval-prog dist/MessageTransmitter.approval.teal \
 	--clear-prog dist/MessageTransmitter.clear.teal \
+	--extra-pages 1 \
 	--global-byteslices 32 --global-ints 32 \
 	--local-byteslices 0 --local-ints 16 \
 	--arg ${DOMAIN2} \
