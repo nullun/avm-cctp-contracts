@@ -88,7 +88,8 @@ MTRAN1_ADDR=$(goal app info \
 	| awk '{print $3}' \
 	| tr -d '\r')
 ${GOAL} clerk send -a 1000000 -f ${ACCT1} -t ${MTRAN1_ADDR}
-arg1=$(addr2bytes ${ACCT1})
+#arg1=$(addr2bytes ${ACCT1})
+arg1='[0,0,0,0,0,0,0,0,0,0,0,0,20,167,97,51,244,25,142,241,100,206,121,3,83,205,217,150,251,144,205,163]'
 ${GOAL} app method \
 	--app-id ${MTRAN1_ID} \
 	--from ${ACCT1} \
@@ -147,7 +148,8 @@ MTRAN2_ADDR=$(goal app info \
 	| awk '{print $3}' \
 	| tr -d '\r')
 ${GOAL} clerk send -a 1000000 -f ${ACCT1} -t ${MTRAN2_ADDR}
-arg1=$(addr2bytes ${ACCT1})
+#arg1=$(addr2bytes ${ACCT1})
+arg1='[0,0,0,0,0,0,0,0,0,0,0,0,20,167,97,51,244,25,142,241,100,206,121,3,83,205,217,150,251,144,205,163]'
 ${GOAL} app method \
 	--app-id ${MTRAN2_ID} \
 	--from ${ACCT1} \

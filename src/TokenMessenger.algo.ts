@@ -8,7 +8,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	_msgRawBody: BurnMessage
+	//_msgRawBody: BurnMessage
 };
 
 type BurnMessage = {

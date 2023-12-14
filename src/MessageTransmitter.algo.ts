@@ -133,30 +133,6 @@ class MessageTransmitter extends Contract {
 	}
 
 
-	// SHOULD NOT BE HERE. MOVE WHEN FIXED
-	/**
-	 * @notice Checks that signature was signed by attester
-	 * @param _digest message hash
-	 * @param _signature message signature
-	 * @return address of recovered signer
-	 */
-	private _recoverAttesterSignature(
-		_digest: byte[32],
-		_signature: bytes
-	): byte[32] {
-		// FIX: ECDSA PK RECOVER
-		const r = substring3(_signature, 0, 32) as byte[32];
-		const s = substring3(_signature, 32, 64) as byte[32];
-		const v = getbyte(_signature, 65) as uint<64>;
-		// FIX: Extremely inefficient, extracting and concatting the same thing.
-		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		const addr = bzero(12) + substring3(keccak256(res[0] + res[1]), 12, 32) as byte[32];
-
-		return addr as byte[32]
-	}
-	// SHOULD NOT BE HERE. MOVE WHEN FIXED
-
-
 	// ============ Internal Utils ============
 	// ===== Ownable =====
 	/**
@@ -188,14 +164,40 @@ class MessageTransmitter extends Contract {
 		// TODO: Do I need this here?
 		assert(attester != bzero(32) as byte[32]);
 
-		const boxSize = this.enabledAttesters.size;
-		for (let i = 0; i + 2 < boxSize / 32; i = i + 1) {
-			if (attester == this.enabledAttesters.value[i]) {
-				return true;
+		const boxSize = this.enabledAttesters.size - 2;
+		if (boxSize > 0) {
+			const numAttesters = boxSize / 32;
+			let index = 0;
+			while (index < numAttesters) {
+				if (attester == this.enabledAttesters.value[index]) {
+					return true;
+				}
+				index = index + 1;
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * @notice Checks that signature was signed by attester
+	 * @param _digest message hash
+	 * @param _signature message signature
+	 * @return address of recovered signer
+	 */
+	private _recoverAttesterSignature(
+		_digest: byte[32],
+		_signature: bytes
+	): byte[32] {
+		// FIX: ECDSA PK RECOVER
+		const r = substring3(_signature, 0, 32) as byte[32];
+		const s = substring3(_signature, 32, 64) as byte[32];
+		const v = getbyte(_signature, 64) as uint<64> - 27;
+		// FIX: Extremely inefficient, extracting and concatting the same thing.
+		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		const addr = bzero(12) + substring3(keccak256(res[0]), 12, 32);
+
+		return addr as byte[32]
 	}
 
 	/**
@@ -246,15 +248,14 @@ class MessageTransmitter extends Contract {
 				_signature
 			);
 
-			/* FIX: Uncomment
-	        // Signatures must be in increasing order of address, and may not duplicate signatures from same address
+			// Signatures must be in increasing order of address, and may not duplicate signatures from same address
 			assert(_recoveredAttester > _latestAttesterAddress);
 			assert(this._isEnabledAttester(_recoveredAttester));
-			*/
 
-	        _latestAttesterAddress = _recoveredAttester;
+			_latestAttesterAddress = _recoveredAttester;
 	    }
 	}
+
 
 	// ===== MessageTransmitter =====
 	/**

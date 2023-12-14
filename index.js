@@ -89,8 +89,8 @@ const main = async() => {
 	});
 	const simulate = new algosdk.modelsv2.SimulateRequest({
 		execTraceConfig: new algosdk.modelsv2.SimulateTraceConfig({
-			enable: false,
-			stackChange: false
+			enable: true,
+			stackChange: true
 		}),
 		allowUnnamedResources: true
 	});
@@ -173,7 +173,7 @@ const main = async() => {
 		await new Promise(r => setTimeout(r, 2000));
 	}
 	console.log(attestationResponse);
-	const signature = attestationResponse.signature;
+	const signature = Buffer.from(attestationResponse.signature, 'hex');
 	console.log("STEP 4: DONE")
 
 	// STEP 5: Using the message bytes and signature recieve the funds on destination chain and address
@@ -210,7 +210,8 @@ const main = async() => {
 		signer: chain2Signer
 	});
 	simres = await atc.simulate(algod, simulate);
-	//console.log(simres.simulateResponse);
+	console.log(simres.simulateResponse);
+	//console.log(simres.simulateResponse.txnGroups[0].txnResults[1].execTrace.approvalProgramTrace);
 
 	const appAddrs = [
 		algosdk.getApplicationAddress(AVM2_MESSAGE_TRANSMITTER_ID),
