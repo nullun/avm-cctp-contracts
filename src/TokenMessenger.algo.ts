@@ -143,7 +143,7 @@ class TokenMessenger extends Contract {
 		_destinationCaller: byte[32],
 		_burnMessage: bytes
 	): uint<64> {
-		if (_destinationCaller === bzero(32)) {
+		if (_destinationCaller === bzero(32) as byte[32]) {
 			return sendMethodCall<[uint<32>, byte[32], bytes], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessage',
@@ -177,7 +177,7 @@ class TokenMessenger extends Contract {
 	): byte[32] {
 		const _tokenMessenger = this.remoteTokenMessengers(_domain).value;
 
-		assert(_tokenMessenger !== bzero(32));
+		assert(_tokenMessenger !== bzero(32) as byte[32]);
 
 		return _tokenMessenger;
 	}
@@ -200,7 +200,7 @@ class TokenMessenger extends Contract {
 		_destinationCaller: byte[32]
 	): uint<64> {
 		assert(_axfer.assetAmount);
-		assert(_mintRecipient != bzero(32));
+		assert(_mintRecipient != bzero(32) as byte[32]);
 
 		const _destinationTokenMessenger: byte[32] = this._getRemoteTokenMessenger(
 		    _destinationDomain
@@ -347,7 +347,7 @@ class TokenMessenger extends Contract {
 		destinationCaller: byte[32]
 	): uint<64> {
 	    // Destination caller must be nonzero. To allow any destination caller, use depositForBurn().
-		assert(destinationCaller !== bzero(32));
+		assert(destinationCaller !== bzero(32) as byte[32]);
 
 		return this._depositForBurn(
 			axfer,
@@ -391,8 +391,8 @@ class TokenMessenger extends Contract {
 
 		const _originalMsgSender = _originalMsgBody._messageSender;
 		// _originalMsgSender must match msg.sender of original message
-		assert(rawBytes(globals.callerApplicationAddress) === _originalMsgSender);
-		assert(newMintRecipient !== bzero(32));
+		assert(rawBytes(globals.callerApplicationAddress) as byte[32] === _originalMsgSender);
+		assert(newMintRecipient !== bzero(32) as byte[32]);
 
 		const _burnToken = Asset.fromID(btoi(_originalMsgBody._burnToken));
 		const _amount = _originalMsgBody._amount;
@@ -481,7 +481,7 @@ class TokenMessenger extends Contract {
 	): void {
 		// TODO: this.onlyOwner();
 
-		assert(tokenMessenger !== bzero(32));
+		assert(tokenMessenger !== bzero(32) as byte[32]);
 		assert(!this.remoteTokenMessengers(domain).exists);
 
 		this.remoteTokenMessengers(domain).value = tokenMessenger;
