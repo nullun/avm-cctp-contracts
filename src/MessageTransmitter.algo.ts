@@ -1,4 +1,5 @@
 import { Contract } from '../../algorandfoundation/tealscript/src/lib/index';
+//import { Contract } from '@algorandfoundation/tealscript';
 
 type Message = {
 	_msgVersion: uint<32>,
@@ -8,20 +9,7 @@ type Message = {
 	_msgSender: byte[32],
 	_msgRecipient: byte[32],
 	_msgDestinationCaller: byte[32],
-	//_msgRawBody: bytes
 };
-
-/*
-// We don't really want this referenced in the Message Transmitter.
-// It should be message body agnostic.
-type BurnMessage = {
-	_version: uint<32>,
-	_burnToken: byte[32],
-	_mintRecipient: byte[32],
-	_amount: uint<256>,
-	_messageSender: byte[32]
-};
-*/
 
 type SourceDomainNonceBox = {
 	sourceDomain: uint<32>;
@@ -114,7 +102,7 @@ class MessageTransmitter extends Contract {
 
 	// Stores 262,144 nonce flags per box (0 if unused, 1 if used)
 	// nonce / 262144 = box number. nonce / 8 = offset. nonce % 8 = flag position.
-	usedNonces = BoxMap<SourceDomainNonceBox, byte>();
+	usedNonces = BoxMap<SourceDomainNonceBox, byte>({ allowPotentialCollisions: true });
 
 
 	// ============ Access Checks ============
@@ -236,7 +224,7 @@ class MessageTransmitter extends Contract {
 			// Need at least 2000 Opcode budget
 			while (globals.opcodeBudget < 2500) {
 				sendAppCall({
-					onCompletion: 'DeleteApplication',
+					onCompletion: OnCompletion.DeleteApplication,
 					approvalProgram: hex("0x0a8101"),
 					clearStateProgram: hex("0x0a8101")
 				});
@@ -289,7 +277,7 @@ class MessageTransmitter extends Contract {
 		_messageBody: bytes
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
-		assert(_recipient != bzero(32));
+		assert(_recipient != bzero(32) as byte[32]);
 
 		// serialize message
 		const _message: Message = {
