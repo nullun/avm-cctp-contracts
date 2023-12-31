@@ -1,5 +1,4 @@
-import { Contract } from '../../algorandfoundation/tealscript/src/lib/index';
-//import { Contract } from '@algorandfoundation/tealscript';
+import { Contract } from '@algorandfoundation/tealscript';
 
 type Message = {
 	_msgVersion: uint<32>,
@@ -110,7 +109,7 @@ class MessageTransmitter extends Contract {
 	 * @dev Throws if called by any account other than the owner.
 	 */
 	private onlyOwner(): void {
-		assert(this.txn.sender == this.owner.value);
+		assert(this.txn.sender === this.owner.value);
 	}
 
 	/**
@@ -174,16 +173,16 @@ class MessageTransmitter extends Contract {
 	 * @return address of recovered signer
 	 */
 	private _recoverAttesterSignature(
-		_digest: byte[32],
+		_digest: StaticArray<byte, 32>,
 		_signature: bytes
 	): byte[32] {
 		// FIX: ECDSA PK RECOVER
-		const r = substring3(_signature, 0, 32) as byte[32];
-		const s = substring3(_signature, 32, 64) as byte[32];
+		const r = btobigint(substring3(_signature, 0, 32));
+		const s = btobigint(substring3(_signature, 32, 64));
 		const v = getbyte(_signature, 64) as uint<64> - 27;
 		// FIX: Extremely inefficient, extracting and concatting the same thing.
 		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		const addr = bzero(12) + substring3(keccak256(res[0]), 12, 32);
+		const addr = bzero(12) + substring3(keccak256(rawBytes(res[0])), 12, 32);
 
 		return addr as byte[32]
 	}
