@@ -11,11 +11,11 @@ class TokenMinter extends Contract {
 	 * @param remoteToken token on `remoteDomain` corresponding to `localToken`
 	 */
 	// TokenPairLinked(asset,uint32,byte[32])
-	TokenPairLinked = new EventLogger<[
-		Asset,
-		uint<32>,
-		byte[32]
-	]>();
+	TokenPairLinked = new EventLogger<{
+		localToken: Asset,
+		remoteDomain: uint<32>,
+		remoteToken: byte[32]
+	}>();
 
 	/**
 	 * @notice Emitted when a token pair is unlinked
@@ -24,11 +24,11 @@ class TokenMinter extends Contract {
 	 * @param remoteToken token on `remoteDomain` unlinked from `localToken`
 	 */
 	// TokenPairUnlinked(asset,uint32,byte[32])
-	TokenPairUnlinked = new EventLogger<[
-		Asset,
-		uint<32>,
-		byte[32]
-	]>();
+	TokenPairUnlinked = new EventLogger<{
+		localToken: Asset,
+		remoteDomain: uint<32>,
+		remoteToken: byte[32]
+	}>();
 
 	/**
 	 * @notice Emitted when a burn limit per message is set for a particular token
@@ -36,17 +36,19 @@ class TokenMinter extends Contract {
 	 * @param burnLimitPerMessage burn limit per message for `token`
 	 */
 	// SetBurnLimitPerMessage(asset,uint64)
-	SetBurnLimitPerMessage = new EventLogger<[
-		Asset,
-		uint<64>
-	]>();
+	SetBurnLimitPerMessage = new EventLogger<{
+		token: Asset,
+		burnLimitPerMessage: uint<64>
+	}>();
 
 	/**
 	 * @notice Emitted when token controller is set
 	 * @param tokenController token controller address set
 	 */
 	// SetTokenController(address)
-	SetTokenController = new EventLogger<[Address]>();
+	SetTokenController = new EventLogger<{
+		tokenController: Address
+	}>();
 
 	// ===== TokenMinter =====
 	/**
@@ -55,7 +57,9 @@ class TokenMinter extends Contract {
 	 * @notice Emitted when a local TokenMessenger is added
 	 */
 	// LocalTokenMessengerAddress(application)
-	LocalTokenMessengerAdded = new EventLogger<[Application]>();
+	LocalTokenMessengerAdded = new EventLogger<{
+		localTokenMessenger: Application
+	}>();
 
 	/**
 	 * @notice Emitted when a local TokenMessenger is removed
@@ -63,7 +67,9 @@ class TokenMinter extends Contract {
 	 * @notice Emitted when a local TokenMessenger is removed
 	 */
 	// LocalTokenMessengerRemoved(application)
-	LocalTokenMessengerRemoved = new EventLogger<[Application]>();
+	LocalTokenMessengerRemoved = new EventLogger<{
+		localTokenMessenger: Application
+	}>();
 
 
 	// ============ State Variables ============
@@ -133,7 +139,9 @@ class TokenMinter extends Contract {
 
 		this._tokenController.value = newTokenController;
 
-		this.SetTokenController.log(newTokenController);
+		this.SetTokenController.log({
+			tokenController: newTokenController
+		});
 	}
 
 	/**
@@ -203,7 +211,11 @@ class TokenMinter extends Contract {
 
 		this.remoteTokensToLocalTokens(_remoteTokensKey).value = localToken;
 
-		this.TokenPairLinked.log(localToken, remoteDomain, remoteToken);
+		this.TokenPairLinked.log({
+			localToken: localToken,
+			remoteDomain: remoteDomain,
+			remoteToken: remoteToken
+		});
 	}
 
 	/**
@@ -235,7 +247,11 @@ class TokenMinter extends Contract {
 
 		this.remoteTokensToLocalTokens(_remoteTokensKey).delete();
 
-		this.TokenPairUnlinked.log(localToken, remoteDomain, remoteToken);
+		this.TokenPairUnlinked.log({
+			localToken: localToken,
+			remoteDomain: remoteDomain,
+			remoteToken: remoteToken
+		});
 	}
 
 	/**
@@ -254,7 +270,10 @@ class TokenMinter extends Contract {
 
 		this.burnLimitsPerMessage(localToken).value = burnLimitPerMessage;
 
-		this.SetBurnLimitPerMessage.log(localToken, burnLimitPerMessage);
+		this.SetBurnLimitPerMessage.log({
+			token: localToken,
+			burnLimitPerMessage: burnLimitPerMessage
+		});
 	}
 
 	// ===== TokenMinter =====
@@ -334,7 +353,9 @@ class TokenMinter extends Contract {
 
 		this.localTokenMessenger.value = newLocalTokenMessenger;
 
-		this.LocalTokenMessengerAdded.log(newLocalTokenMessenger);
+		this.LocalTokenMessengerAdded.log({
+			localTokenMessenger: newLocalTokenMessenger
+		});
 	}
 
 	/**
@@ -350,7 +371,9 @@ class TokenMinter extends Contract {
 
 		this.localTokenMessenger.delete();
 
-		this.LocalTokenMessengerRemoved.log(_localTokenMessengerBeforeRemoval);
+		this.LocalTokenMessengerRemoved.log({
+			localTokenMessenger: _localTokenMessengerBeforeRemoval
+		});
 	}
 
 	/**

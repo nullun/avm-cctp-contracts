@@ -24,7 +24,12 @@ class MessageTransmitter extends Contract {
 	// ============ Events ============
 	// ===== Ownable =====
 	// OwnershipTransferred(address,address)
-	OwnershipTransferred = new EventLogger<[Address, Address]>();
+	OwnershipTransferred = new EventLogger<{
+		/* Old Address */
+		oldAddress: Address,
+		/* New Address */
+		newAddress: Address
+	}>();
 
 	// ===== Attestable =====
 	/**
@@ -33,7 +38,12 @@ class MessageTransmitter extends Contract {
 	 * @param newAttesterManager representing the address of the new attester manager
 	 */
 	// AttesterManagerUpdated(address,address)
-	AttesterManagerUpdated = new EventLogger<[Address, Address]>();
+	AttesterManagerUpdated = new EventLogger<{
+		/* previousAttesterManager */
+		previousAttesterManager: Address,
+		/* newAttesterManager */
+		newAttesterManager: Address
+	}>();
 
 	/**
 	 * @notice Emitted when threshold number of attestations (m in m/n multisig) is updated
@@ -41,7 +51,12 @@ class MessageTransmitter extends Contract {
 	 * @param newSignatureThreshold new signature threshold
 	 */
 	// SignatureThresholdUpdated(uint64,uint64)
-	SignatureThresholdUpdated = new EventLogger<[uint<64>, uint<64>]>();
+	SignatureThresholdUpdated = new EventLogger<{
+		/* oldSignatureThreshold */
+		oldSignatureThreshold: uint<64>,
+		/* newSignatureThreshold */
+		newSignatureThreshold: uint<64>
+	}>();
 
 	// ===== MessageTransmitter =====
 	/**
@@ -49,7 +64,10 @@ class MessageTransmitter extends Contract {
 	 * @param message Raw bytes of message
 	 */
 	// MessageSent(byte[])
-	MessageSent = new EventLogger<[bytes]>();
+	MessageSent = new EventLogger<{
+		/* Message */
+		message: bytes
+	}>();
 
 	/**
 	 * @notice Emitted when a new message is received
@@ -60,14 +78,22 @@ class MessageTransmitter extends Contract {
 	 * @param messageBody message body bytes
 	 */
 	// MessageReceived(address,uint32,uint64,byte[32],byte[])
-	MessageReceived = new EventLogger<[Address,uint<32>,uint<64>,byte[32],bytes]>();
+	MessageReceived = new EventLogger<{
+		caller: Address,
+		sourceDomain: uint<32>,
+		nonce: uint<64>,
+		sender: byte[32],
+		messageBody: bytes
+	}>();
 
 	/**
 	 * @notice Emitted when max message body size is updated
 	 * @param newMaxMessageBodySize new maximum message body size, in bytes
 	 */
 	// MaxMessageBodySizeUpdated(uint64)
-	MaxMessageBodySizeUpdated = new EventLogger<[uint<64>]>();
+	MaxMessageBodySizeUpdated = new EventLogger<{
+		newMaxMessageBodySize: uint<64>
+	}>();
 
 
 	// ============ State Variables ============
@@ -130,7 +156,7 @@ class MessageTransmitter extends Contract {
 		const oldOwner: Address = this.owner.value;
 		this.owner.value = newOwner;
 
-		this.OwnershipTransferred.log(oldOwner ? oldOwner : globals.zeroAddress, newOwner);
+		this.OwnershipTransferred.log({ oldAddress: oldOwner ? oldOwner : globals.zeroAddress, newAddress: newOwner });
 	}
 
 	// ===== Attestable =====
@@ -213,7 +239,7 @@ class MessageTransmitter extends Contract {
 		let _latestAttesterAddress = bzero(32) as byte[32];
 
 		const _digest = keccak256(rawBytes(_message));
-	    for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
+		for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
 			const _signature = substring3(
 				rawBytes(_attestation),
 				i * signatureLength,
@@ -240,7 +266,7 @@ class MessageTransmitter extends Contract {
 			assert(this._isEnabledAttester(_recoveredAttester));
 
 			_latestAttesterAddress = _recoveredAttester;
-	    }
+		}
 	}
 
 
@@ -290,7 +316,7 @@ class MessageTransmitter extends Contract {
 			//_msgRawBody: _messageBody
 		};
 
-		this.MessageSent.log(rawBytes(_message) + _messageBody);
+		this.MessageSent.log({ message: rawBytes(_message) + _messageBody });
 	}
 
 	/**
@@ -397,7 +423,7 @@ class MessageTransmitter extends Contract {
 		const _oldAttesterManager: Address = this.attesterManager.value;
 		this._setAttesterManager(newAttesterManager);
 
-		this.AttesterManagerUpdated.log(_oldAttesterManager ? _oldAttesterManager : globals.zeroAddress, newAttesterManager);
+		this.AttesterManagerUpdated.log({ previousAttesterManager: _oldAttesterManager ? _oldAttesterManager : globals.zeroAddress, newAttesterManager: newAttesterManager });
 	}
 
 	/**
@@ -446,7 +472,7 @@ class MessageTransmitter extends Contract {
 		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
 		this.signatureThreshold.value = newSignatureThreshold;
 
-		this.SignatureThresholdUpdated.log(_oldSignatureThreshold, this.signatureThreshold.value);
+		this.SignatureThresholdUpdated.log({ oldSignatureThreshold: _oldSignatureThreshold, newSignatureThreshold: this.signatureThreshold.value });
 	}
 
 	// ===== MessageTransmitter =====
@@ -670,11 +696,13 @@ class MessageTransmitter extends Contract {
 		//assert(handled);
 
 		this.MessageReceived.log(
-			this.txn.sender,
-			_message._msgSourceDomain,
-			_message._msgNonce,
-			_message._msgSender,
-			_messageBody
+			{
+				caller: this.txn.sender,
+				sourceDomain: _message._msgSourceDomain,
+				nonce: _message._msgNonce,
+				sender: _message._msgSender,
+				messageBody: _messageBody
+			}
 		);
 
 		return true;
@@ -693,7 +721,7 @@ class MessageTransmitter extends Contract {
 
 		this.maxMessageBodySize.value = newMaxMessageBodySize;
 
-		this.MaxMessageBodySizeUpdated.log(this.maxMessageBodySize.value);
+		this.MaxMessageBodySizeUpdated.log({ newMaxMessageBodySize: this.maxMessageBodySize.value });
 	}
 
 
