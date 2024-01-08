@@ -5,18 +5,18 @@ type Message = {
 	_msgSourceDomain: uint<32>,
 	_msgDestinationDomain: uint<32>,
 	_msgNonce: uint<64>,
-	_msgSender: byte[32],
-	_msgRecipient: byte[32],
-	_msgDestinationCaller: byte[32],
+	_msgSender: StaticArray<byte, 32>,
+	_msgRecipient: StaticArray<byte, 32>,
+	_msgDestinationCaller: StaticArray<byte, 32>,
 	//_msgRawBody: BurnMessage
 };
 
 type BurnMessage = {
 	_version: uint<32>,
-	_burnToken: byte[32],
-	_mintRecipient: byte[32],
+	_burnToken: StaticArray<byte, 32>,
+	_mintRecipient: StaticArray<byte, 32>,
 	_amount: uint<256>,
-	_messageSender: byte[32]
+	_messageSender: StaticArray<byte, 32>
 };
 
 class TokenMessenger extends Contract {
@@ -34,16 +34,16 @@ class TokenMessenger extends Contract {
 	 * @param destinationCaller authorized caller as bytes32 of receiveMessage() on destination domain, if not equal to bytes32(0).
 	 * If equal to bytes32(0), any address can call receiveMessage().
 	 */
-	// DepositForBurn(uint64,asset,uint256,address,byte[32],uint32,byte[32],byte[32])
+	// DepositForBurn(uint64,asset,uint256,address,StaticArray<byte, 32>,uint32,StaticArray<byte, 32>,StaticArray<byte, 32>)
 	DepositForBurn = new EventLogger<{
 		nonce: uint<64>,
 		burnToken: Asset,
 		amount: uint<256>,
 		depositor: Address,
-		mintRecipient: byte[32],
+		mintRecipient: StaticArray<byte, 32>,
 		destinationDomain: uint<32>,
-		destinationTokenMessenger: byte[32],
-		destinationCaller: byte[32]
+		destinationTokenMessenger: StaticArray<byte, 32>,
+		destinationCaller: StaticArray<byte, 32>
 	}>();
 
 	/**
@@ -64,10 +64,10 @@ class TokenMessenger extends Contract {
 	 * @param domain remote domain
 	 * @param tokenMessenger TokenMessenger on remote domain
 	 */
-	// RemoteTokenMessengerAdded(uint32,byte[32])
+	// RemoteTokenMessengerAdded(uint32,StaticArray<byte, 32>)
 	RemoteTokenMessengerAdded = new EventLogger<{
 		domain: uint<32>,
-		tokenMessenger: byte[32]
+		tokenMessenger: StaticArray<byte, 32>
 	}>();
 
 	/**
@@ -75,10 +75,10 @@ class TokenMessenger extends Contract {
 	 * @param domain remote domain
 	 * @param tokenMessenger TokenMessenger on remote domain
 	 */
-	// RemoteTokenMessengerRemoved(uint32,byte[32])
+	// RemoteTokenMessengerRemoved(uint32,StaticArray<byte, 32>)
 	RemoteTokenMessengerRemoved = new EventLogger<{
 		domain: uint<32>,
-		tokenMessenger: byte[32]
+		tokenMessenger: StaticArray<byte, 32>
 	}>();
 
 	/**
@@ -113,7 +113,7 @@ class TokenMessenger extends Contract {
 	localMinter = GlobalStateKey<Application>();
 
 	// Valid TokenMessengers on remote domains
-	remoteTokenMessengers = BoxMap<uint<32>, byte[32]>();
+	remoteTokenMessengers = BoxMap<uint<32>, StaticArray<byte, 32>>();
 
 
 	// ============ Modifiers ============
@@ -124,7 +124,7 @@ class TokenMessenger extends Contract {
 	 */
 	private onlyRemoteTokenMessenger(
 		domain: uint<32>,
-		tokenMessenger: byte[32]
+		tokenMessenger: StaticArray<byte, 32>
 	): void {
 		assert(this.remoteTokenMessengers(domain).value === tokenMessenger);
 	}
@@ -163,12 +163,12 @@ class TokenMessenger extends Contract {
 	 */
 	private _sendDepositForBurnMessage(
 		_destinationDomain: uint<32>,
-		_destinationTokenMessenger: byte[32],
-		_destinationCaller: byte[32],
+		_destinationTokenMessenger: StaticArray<byte, 32>,
+		_destinationCaller: StaticArray<byte, 32>,
 		_burnMessage: bytes
 	): uint<64> {
-		if (_destinationCaller === bzero(32) as byte[32]) {
-			return sendMethodCall<[uint<32>, byte[32], bytes], uint<64>>({
+		if (_destinationCaller === bzero(32) as StaticArray<byte, 32>) {
+			return sendMethodCall<[uint<32>, StaticArray<byte, 32>, bytes], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessage',
 				methodArgs: [
@@ -178,7 +178,7 @@ class TokenMessenger extends Contract {
 				]
 			});
 		} else {
-			return sendMethodCall<[uint<32>, byte[32], byte[32], bytes], uint<64>>({
+			return sendMethodCall<[uint<32>, StaticArray<byte, 32>, StaticArray<byte, 32>, bytes], uint<64>>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessageWithCaller',
 				methodArgs: [
@@ -198,10 +198,10 @@ class TokenMessenger extends Contract {
 	 */
 	private _getRemoteTokenMessenger(
 		_domain: uint<32>
-	): byte[32] {
+	): StaticArray<byte, 32> {
 		const _tokenMessenger = this.remoteTokenMessengers(_domain).value;
 
-		assert(_tokenMessenger !== bzero(32) as byte[32]);
+		assert(_tokenMessenger !== bzero(32) as StaticArray<byte, 32>);
 
 		return _tokenMessenger;
 	}
@@ -219,14 +219,14 @@ class TokenMessenger extends Contract {
 	private _depositForBurn(
 		_axfer: AssetTransferTxn,
 		_destinationDomain: uint<32>,
-		_mintRecipient: byte[32],
+		_mintRecipient: StaticArray<byte, 32>,
 		_burnToken: Asset,
-		_destinationCaller: byte[32]
+		_destinationCaller: StaticArray<byte, 32>
 	): uint<64> {
 		assert(_axfer.assetAmount);
-		assert(_mintRecipient != bzero(32) as byte[32]);
+		assert(_mintRecipient != bzero(32) as StaticArray<byte, 32>);
 
-		const _destinationTokenMessenger: byte[32] = this._getRemoteTokenMessenger(
+		const _destinationTokenMessenger: StaticArray<byte, 32> = this._getRemoteTokenMessenger(
 			_destinationDomain
 		);
 
@@ -250,10 +250,10 @@ class TokenMessenger extends Contract {
 		// Format message body
 		const _burnMessage: BurnMessage = {
 			_version: this.messageBodyVersion.value as uint<32>,
-			_burnToken: concat(bzero(32 - len(itob(_burnToken))), itob(_burnToken)) as byte[32],
+			_burnToken: concat(bzero(32 - len(itob(_burnToken))), itob(_burnToken)) as StaticArray<byte, 32>,
 			_mintRecipient: _mintRecipient,
 			_amount: _axfer.assetAmount as uint<256>,
-			_messageSender: rawBytes(this.txn.sender) as byte[32]
+			_messageSender: rawBytes(this.txn.sender) as StaticArray<byte, 32>
 		};
 
 		const _nonceReserved: uint<64> = this._sendDepositForBurnMessage(
@@ -288,11 +288,11 @@ class TokenMessenger extends Contract {
 	private _mintAndWithdraw(
 		_tokenMinter: Application,
 		_remoteDomain: uint<32>,
-		_burnToken: byte[32],
+		_burnToken: StaticArray<byte, 32>,
 		_mintRecipient: Address,
 		_amount: uint<64>
 	): void {
-		const _mintToken = sendMethodCall<[uint<32>, byte[32], Address, uint<64>], Asset>({
+		const _mintToken = sendMethodCall<[uint<32>, StaticArray<byte, 32>, Address, uint<64>], Asset>({
 			applicationID: _tokenMinter,
 			name: 'mint',
 			methodArgs: [
@@ -331,7 +331,7 @@ class TokenMessenger extends Contract {
 	depositForBurn(
 		axfer: AssetTransferTxn,
 		destinationDomain: uint<32>,
-		mintRecipient: byte[32],
+		mintRecipient: StaticArray<byte, 32>,
 		burnToken: Asset
 	): uint<64> {
 		return this._depositForBurn(
@@ -370,12 +370,12 @@ class TokenMessenger extends Contract {
 	depositForBurnWithCaller(
 		axfer: AssetTransferTxn,
 		destinationDomain: uint<32>,
-		mintRecipient: byte[32],
+		mintRecipient: StaticArray<byte, 32>,
 		burnToken: Asset,
-		destinationCaller: byte[32]
+		destinationCaller: StaticArray<byte, 32>
 	): uint<64> {
 		// Destination caller must be nonzero. To allow any destination caller, use depositForBurn().
-		assert(destinationCaller !== bzero(32) as byte[32]);
+		assert(destinationCaller !== bzero(32) as StaticArray<byte, 32>);
 
 		return this._depositForBurn(
 			axfer,
@@ -410,8 +410,8 @@ class TokenMessenger extends Contract {
 	replaceDepositForBurn(
 		originalMessage: bytes,
 		originalAttestation: bytes,
-		newDestinationCaller: byte[32],
-		newMintRecipient: byte[32]
+		newDestinationCaller: StaticArray<byte, 32>,
+		newMintRecipient: StaticArray<byte, 32>
 	): void {
 		const msgLength = originalMessage.length;
 		const _originalMsg = castBytes<Message>(originalMessage);
@@ -419,21 +419,21 @@ class TokenMessenger extends Contract {
 
 		const _originalMsgSender = _originalMsgBody._messageSender;
 		// _originalMsgSender must match msg.sender of original message
-		assert(rawBytes(globals.callerApplicationAddress) as byte[32] === _originalMsgSender);
-		assert(newMintRecipient !== bzero(32) as byte[32]);
+		assert(rawBytes(globals.callerApplicationAddress) as StaticArray<byte, 32> === _originalMsgSender);
+		assert(newMintRecipient !== bzero(32) as StaticArray<byte, 32>);
 
 		const _burnToken = Asset.fromID(btoi(_originalMsgBody._burnToken));
 		const _amount = _originalMsgBody._amount;
 
 		const newMessageBody: BurnMessage = {
 			_version: this.messageBodyVersion.value,
-			_burnToken: itob(_burnToken) as byte[32],
+			_burnToken: itob(_burnToken) as StaticArray<byte, 32>,
 			_mintRecipient: newMintRecipient,
 			_amount: _amount,
 			_messageSender: _originalMsgSender
 		};
 
-		sendMethodCall<[bytes, bytes, bytes, byte[32]], void>({
+		sendMethodCall<[bytes, bytes, bytes, StaticArray<byte, 32>], void>({
 			applicationID: this.localMessageTransmitter.value,
 			name: 'replaceMessage',
 			methodArgs: [
@@ -469,7 +469,7 @@ class TokenMessenger extends Contract {
 	 */
 	handleReceiveMessage(
 		remoteDomain: uint<32>,
-		sender: byte[32],
+		sender: StaticArray<byte, 32>,
 		messageBody: bytes
 	): boolean {
 		this.onlyLocalMessageTransmitter();
@@ -505,11 +505,11 @@ class TokenMessenger extends Contract {
 	 */
 	addRemoteTokenMessenger(
 		domain: uint<32>,
-		tokenMessenger: byte[32]
+		tokenMessenger: StaticArray<byte, 32>
 	): void {
 		// TODO: this.onlyOwner();
 
-		assert(tokenMessenger !== bzero(32) as byte[32]);
+		assert(tokenMessenger !== bzero(32) as StaticArray<byte, 32>);
 		assert(!this.remoteTokenMessengers(domain).exists);
 
 		this.remoteTokenMessengers(domain).value = tokenMessenger;
@@ -533,7 +533,9 @@ class TokenMessenger extends Contract {
 		// No TokenMessenger set for given remote domain.
 		assert(this.remoteTokenMessengers(domain).exists);
 
-		const _removedTokenMessenger: byte[32] = this.remoteTokenMessengers(domain).value;
+		// FIX: This isn't right
+		const _removedTokenMessenger: StaticArray<byte, 32> = rawBytes(this.txn.sender) as StaticArray<byte, 32>;
+		//const _removedTokenMessenger: StaticArray<byte, 32> = this.remoteTokenMessengers(domain).value;
 		this.remoteTokenMessengers(domain).delete();
 
 		this.RemoteTokenMessengerRemoved.log({
