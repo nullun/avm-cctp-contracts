@@ -7,12 +7,19 @@ type Message = {
 	_msgNonce: uint<64>,
 	_msgSender: StaticArray<byte, 32>,
 	_msgRecipient: StaticArray<byte, 32>,
-	_msgDestinationCaller: StaticArray<byte, 32>,
+	_msgDestinationCaller: StaticArray<byte, 32>
+	// _msgBody: bytes // Think it may be better to keep it out of the type structure
 };
 
 type SourceDomainNonceBox = {
-	sourceDomain: uint<32>;
-	nonce: uint<64>;
+	sourceDomain: uint<32>,
+	nonce: uint<64>
+};
+
+type Signature = {
+	r: StaticArray<byte, 32>,
+	s: StaticArray<byte, 32>,
+	v: uint<8>
 };
 
 // 65-byte ECDSA signature: v (1) + r (32) + s (32)
@@ -200,17 +207,17 @@ class MessageTransmitter extends Contract {
 	 */
 	private _recoverAttesterSignature(
 		_digest: StaticArray<byte, 32>,
-		_signature: bytes
+		_signature: Signature
 	): StaticArray<byte, 32> {
 		// FIX: ECDSA PK RECOVER
-		const r = btobigint(substring3(_signature, 0, 32));
-		const s = btobigint(substring3(_signature, 32, 64));
-		const v = getbyte(_signature, 64) as uint<64> - 27;
-		// FIX: Extremely inefficient, extracting and concatting the same thing.
-		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
-		const addr = bzero(12) + substring3(keccak256(rawBytes(res[0])), 12, 32);
+		const r = btobigint(_signature.r);
+		const s = btobigint(_signature.s);
+		const v = <uint<64>>_signature.v - 27;
 
-		return addr as StaticArray<byte, 32>
+		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		const addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as StaticArray<byte, 32>;
+
+		return addr
 	}
 
 	/**
@@ -236,15 +243,12 @@ class MessageTransmitter extends Contract {
 
 		// (Attesters cannot be address(0))
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
-		let _latestAttesterAddress = bzero(32) as StaticArray<byte, 32>;
+		let _latestAttesterAddress: StaticArray<byte, 32> = bzero(32) as StaticArray<byte, 32>;
 
-		const _digest = keccak256(rawBytes(_message));
+		const _signatures = castBytes<Signature[]>(_attestation);
+		const _digest = keccak256(_message);
 		for (let i = 0; i < this.signatureThreshold.value; i = i + 1) {
-			const _signature = substring3(
-				rawBytes(_attestation),
-				i * signatureLength,
-				i * signatureLength + signatureLength
-			);
+			const _signature = _signatures[i];
 
 			// Need at least 2000 Opcode budget
 			while (globals.opcodeBudget < 2500) {
@@ -262,7 +266,7 @@ class MessageTransmitter extends Contract {
 			);
 
 			// Signatures must be in increasing order of address, and may not duplicate signatures from same address
-			assert(_recoveredAttester > _latestAttesterAddress);
+			assert(btobigint(_recoveredAttester) > btobigint(_latestAttesterAddress));
 			assert(this._isEnabledAttester(_recoveredAttester));
 
 			_latestAttesterAddress = _recoveredAttester;
