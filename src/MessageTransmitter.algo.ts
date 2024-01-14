@@ -1,25 +1,25 @@
 import { Contract } from '@algorandfoundation/tealscript';
 
 type Message = {
-	_msgVersion: uint<32>,
-	_msgSourceDomain: uint<32>,
-	_msgDestinationDomain: uint<32>,
-	_msgNonce: uint<64>,
-	_msgSender: StaticArray<byte, 32>,
-	_msgRecipient: StaticArray<byte, 32>,
-	_msgDestinationCaller: StaticArray<byte, 32>
+	_msgVersion: uint<32>;
+	_msgSourceDomain: uint<32>;
+	_msgDestinationDomain: uint<32>;
+	_msgNonce: uint<64>;
+	_msgSender: StaticArray<byte, 32>;
+	_msgRecipient: StaticArray<byte, 32>;
+	_msgDestinationCaller: StaticArray<byte, 32>;
 	// _msgBody: bytes // Think it may be better to keep it out of the type structure
 };
 
 type SourceDomainNonceBox = {
-	sourceDomain: uint<32>,
-	nonce: uint<64>
+	sourceDomain: uint<32>;
+	nonce: uint<64>;
 };
 
 type Signature = {
-	r: StaticArray<byte, 32>,
-	s: StaticArray<byte, 32>,
-	v: uint<8>
+	r: StaticArray<byte, 32>;
+	s: StaticArray<byte, 32>;
+	v: uint<8>;
 };
 
 // 65-byte ECDSA signature: v (1) + r (32) + s (32)
@@ -209,12 +209,11 @@ class MessageTransmitter extends Contract {
 		_digest: StaticArray<byte, 32>,
 		_signature: Signature
 	): StaticArray<byte, 32> {
-		// FIX: ECDSA PK RECOVER
 		const r = btobigint(_signature.r);
 		const s = btobigint(_signature.s);
-		const v = <uint<64>>_signature.v - 27;
+		const v = _signature.v - 27;
 
-		const res = ecdsa_pk_recover("Secp256k1", _digest, v, r, s);
+		const res = ecdsa_pk_recover("Secp256k1", _digest, <uint64>v, r, s);
 		const addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as StaticArray<byte, 32>;
 
 		return addr
@@ -531,7 +530,7 @@ class MessageTransmitter extends Contract {
 		// TODO: Validate each signature in the attestation
 		this._verifyAttestationSignatures(originalMessage, originalAttestation);
 
-		const message_start = extract_uint16(originalMessage, 0) + 2;
+		const message_start = extract_uint16(originalMessage, 0);
 		const message_size = 116;
 		const _message = castBytes<Message>(substring3(originalMessage, message_start, message_start + message_size));
 
@@ -642,7 +641,7 @@ class MessageTransmitter extends Contract {
 			amount: (2500) + (400 * (12)),
 		});
 
-		const message_start = extract_uint16(message, 0) + 2;
+		const message_start = extract_uint16(message, 0);
 		const message_size = 116;
 		const _message = castBytes<Message>(substring3(message, message_start, message_start + message_size));
 

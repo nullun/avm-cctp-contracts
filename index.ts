@@ -151,10 +151,10 @@ const main = async() => {
 				//console.log(l);
 				if (l.slice(0, 8) === '42a65f80') {
 					// Convert the byte array to a hexadecimal string
-					messageBody = l.slice(8);
+					messageBody = l.slice(16);
 
 					// Calculate the Keccak-256 hash using the keccak library
-					const keccak256Hash = '0x' + keccak('keccak256').update(messageBody).digest('hex');
+					const keccak256Hash = '0x' + keccak('keccak256').update(Buffer.from(messageBody, 'hex')).digest('hex');
 
 					console.log('Keccak-256 Hash:', keccak256Hash);
 					messageHash = keccak256Hash;
@@ -210,7 +210,7 @@ const main = async() => {
 		signer: chain2Signer
 	});
 	simres = await atc.simulate(algod, simulate);
-	console.log(simres.simulateResponse);
+	//console.log(simres.simulateResponse);
 	//console.log(simres.simulateResponse.txnGroups[0].txnResults[1].execTrace.approvalProgramTrace);
 
 	const appAddrs = [
