@@ -147,14 +147,14 @@ const main = async() => {
 		if ('logs' in sts) {
 			for (const log of sts['logs']) {
 				//console.log(log);
-				const l = Buffer.from(log).toString('hex');
+				const l = Buffer.from(log);
 				//console.log(l);
-				if (l.slice(0, 8) === '42a65f80') {
+				if (l.toString('hex').slice(0, 8) === '42a65f80') {
 					// Convert the byte array to a hexadecimal string
-					messageBody = l.slice(16);
+					messageBody = l.slice(8).toString('hex');
 
 					// Calculate the Keccak-256 hash using the keccak library
-					const keccak256Hash = '0x' + keccak('keccak256').update(Buffer.from(messageBody, 'hex')).digest('hex');
+					const keccak256Hash = '0x' + keccak('keccak256').update(messageBody).digest('hex');
 
 					console.log('Keccak-256 Hash:', keccak256Hash);
 					messageHash = keccak256Hash;
