@@ -11,13 +11,16 @@ bun install
 To compile contracts:
 
 ```bash
-bunx tealscript MessageTransmitter.algo.ts dist
-bunx tealscript TokenMessenger.algo.ts dist
-bunx tealscript TokenMinter.algo.ts dist
+bunx tealscript src/*.algo.ts dist
 ```
 
 ## Test
 
-TODO
+Steps to test:
 
-This project was created using `bun init` in bun v1.0.14. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+1. Deploy contracts
+2. Fund accounts
+	1. User needs FakeUSDC1 to burn
+	2. Both Token Minters need their respective assets
+3. Make sure a CCTP attestation service is running
+4. Run `bun index.ts` to simulate a CCTP transfer
