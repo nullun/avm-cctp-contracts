@@ -5,9 +5,9 @@ type Message = {
 	_msgSourceDomain: uint<32>;
 	_msgDestinationDomain: uint<32>;
 	_msgNonce: uint<64>;
-	_msgSender: StaticArray<byte, 32>;
-	_msgRecipient: StaticArray<byte, 32>;
-	_msgDestinationCaller: StaticArray<byte, 32>;
+	_msgSender: bytes32;
+	_msgRecipient: bytes32;
+	_msgDestinationCaller: bytes32;
 	// _msgBody: bytes // Think it may be better to keep it out of the type structure
 };
 
@@ -17,8 +17,8 @@ type SourceDomainNonceBox = {
 };
 
 type Signature = {
-	r: StaticArray<byte, 32>;
-	s: StaticArray<byte, 32>;
+	r: bytes32;
+	s: bytes32;
 	v: uint<8>;
 };
 
@@ -84,12 +84,12 @@ class MessageTransmitter extends Contract {
 	 * @param sender The sender of this message
 	 * @param messageBody message body bytes
 	 */
-	// MessageReceived(address,uint32,uint64,StaticArray<byte, 32>,byte[])
+	// MessageReceived(address,uint32,uint64,bytes32,byte[])
 	MessageReceived = new EventLogger<{
 		caller: Address,
 		sourceDomain: uint<32>,
 		nonce: uint<64>,
-		sender: StaticArray<byte, 32>,
+		sender: bytes32,
 		messageBody: bytes
 	}>();
 
@@ -116,7 +116,7 @@ class MessageTransmitter extends Contract {
 	attesterManager = GlobalStateKey<Address>();
 
 	// Attester Role
-	enabledAttesters = BoxKey<StaticArray<byte, 32>[]>();
+	enabledAttesters = BoxKey<bytes32[]>();
 
 	// ===== MessageTransmitter =====
 	// Domain of chain on which the application is deployed
@@ -180,9 +180,9 @@ class MessageTransmitter extends Contract {
 	 * @param attester attester to check enabled status of
 	 * @return true if given `attester` is enabled, else false
 	 */
-	private _isEnabledAttester(attester: StaticArray<byte, 32>): boolean {
+	private _isEnabledAttester(attester: bytes32): boolean {
 		// TODO: Do I need this here?
-		assert(attester != bzero(32) as StaticArray<byte, 32>);
+		assert(attester != bzero(32) as bytes32);
 
 		const boxSize = this.enabledAttesters.size - 2;
 		if (boxSize > 0) {
@@ -206,15 +206,15 @@ class MessageTransmitter extends Contract {
 	 * @return address of recovered signer
 	 */
 	private _recoverAttesterSignature(
-		_digest: StaticArray<byte, 32>,
+		_digest: bytes32,
 		_signature: Signature
-	): StaticArray<byte, 32> {
+	): bytes32 {
 		const r = btobigint(_signature.r);
 		const s = btobigint(_signature.s);
 		const v = _signature.v - 27;
 
 		const res = ecdsa_pk_recover("Secp256k1", _digest, <uint64>v, r, s);
-		const addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as StaticArray<byte, 32>;
+		const addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as bytes32;
 
 		return addr
 	}
@@ -242,7 +242,7 @@ class MessageTransmitter extends Contract {
 
 		// (Attesters cannot be address(0))
 		// Address recovered from signatures must be in increasing order, to prevent duplicates
-		let _latestAttesterAddress: StaticArray<byte, 32> = bzero(32) as StaticArray<byte, 32>;
+		let _latestAttesterAddress: bytes32 = bzero(32) as bytes32;
 
 		const _signatures = castBytes<Signature[]>(_attestation);
 		const _digest = keccak256(_message);
@@ -259,7 +259,7 @@ class MessageTransmitter extends Contract {
 			}
 
 			// TODO: Fix _recoverAttesterSignature
-			const _recoveredAttester: StaticArray<byte, 32> = this._recoverAttesterSignature(
+			const _recoveredAttester: bytes32 = this._recoverAttesterSignature(
 				_digest,
 				_signature
 			);
@@ -298,14 +298,14 @@ class MessageTransmitter extends Contract {
 	 */
 	private _sendMessage(
 		_destinationDomain: uint<32>,
-		_recipient: StaticArray<byte, 32>,
-		_destinationCaller: StaticArray<byte, 32>,
-		_sender: StaticArray<byte, 32>,
+		_recipient: bytes32,
+		_destinationCaller: bytes32,
+		_sender: bytes32,
 		_nonce: uint<64>,
 		_messageBody: bytes
 	): void {
 		assert(_messageBody.length <= this.maxMessageBodySize.value);
-		assert(_recipient != bzero(32) as StaticArray<byte, 32>);
+		assert(_recipient != bzero(32) as bytes32);
 
 		// serialize message
 		const _message: Message = {
@@ -366,7 +366,7 @@ class MessageTransmitter extends Contract {
 	 * @dev Only callable by attesterManager. New attester must not be attesters.
 	 * @param newAttester attester to enable
 	 */
-	enableAttester(newAttester: StaticArray<byte, 32>): void {
+	enableAttester(newAttester: bytes32): void {
 		this.onlyAttesterManager();
 
 		// Create box if doesn't exist
@@ -394,7 +394,7 @@ class MessageTransmitter extends Contract {
 	 * @param attester attester to retrieve index of
 	 * @return index of given `attester`, else fails
 	 */
-	offsetOfEnabledAttester(attester: StaticArray<byte, 32>): uint<64> {
+	offsetOfEnabledAttester(attester: bytes32): uint<64> {
 		const boxSize = this.enabledAttesters.size;
 		for (let i = 2; i < boxSize; i = i + 32) {
 			if (attester == this.enabledAttesters.value[i]) {
@@ -436,7 +436,7 @@ class MessageTransmitter extends Contract {
 	 * (Attester must be currently enabled.)
 	 * @param attester attester to disable
 	 */
-	disableAttester(attester: StaticArray<byte, 32>): void {
+	disableAttester(attester: bytes32): void {
 		this.onlyAttesterManager();
 
 		assert(this.getNumEnabledAttesters() > 1);
@@ -489,7 +489,7 @@ class MessageTransmitter extends Contract {
 	 */
 	sendMessage(
 		destinationDomain: uint<32>,
-		recipient: StaticArray<byte, 32>,
+		recipient: bytes32,
 		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
@@ -499,7 +499,7 @@ class MessageTransmitter extends Contract {
 		this._sendMessage(
 			destinationDomain,
 			recipient,
-			bzero(32) as StaticArray<byte, 32>,
+			bzero(32) as bytes32,
 			_messageSender,
 			_nonce,
 			messageBody
@@ -524,7 +524,7 @@ class MessageTransmitter extends Contract {
 		originalMessage: bytes,
 		originalAttestation: bytes,
 		newMessageBody: bytes,
-		newDestinationCaller: StaticArray<byte, 32>
+		newDestinationCaller: bytes32
 	): void {
 		// TODO: WhenNotPaused
 		// TODO: Validate each signature in the attestation
@@ -575,12 +575,12 @@ class MessageTransmitter extends Contract {
 	 */
 	sendMessageWithCaller(
 		destinationDomain: uint<32>,
-		recipient: StaticArray<byte, 32>,
-		destinationCaller: StaticArray<byte, 32>,
+		recipient: bytes32,
+		destinationCaller: bytes32,
 		messageBody: bytes
 	): uint<64> {
 		// TODO: WhenNotPaused
-		assert(destinationCaller != bzero(32) as StaticArray<byte, 32>);
+		assert(destinationCaller != bzero(32) as bytes32);
 
 		const _nonce = this._reserveAndIncrementNonce();
 		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
@@ -664,8 +664,8 @@ class MessageTransmitter extends Contract {
 		assert(_message._msgDestinationDomain === this.localDomain.value);
 
 		// Validate destination caller
-		if (_message._msgDestinationCaller != bzero(32) as StaticArray<byte, 32>) {
-			assert(_message._msgDestinationCaller === rawBytes(this.txn.sender) as StaticArray<byte, 32>);
+		if (_message._msgDestinationCaller != bzero(32) as bytes32) {
+			assert(_message._msgDestinationCaller === rawBytes(this.txn.sender) as bytes32);
 		}
 
 		// Validate version
@@ -686,7 +686,7 @@ class MessageTransmitter extends Contract {
 		this.usedNonces(box).create(0);
 
 		// Handle receive message
-		const handled = sendMethodCall<[uint<32>, StaticArray<byte, 32>, bytes], boolean>({
+		const handled = sendMethodCall<[uint<32>, bytes32, bytes], boolean>({
 			applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24)),
 			name: 'handleReceiveMessage',
 			methodArgs: [
@@ -732,7 +732,7 @@ class MessageTransmitter extends Contract {
 	@allow.create('NoOp')
 	deploy(
 		_localDomain: uint<32>,
-		//_attester: StaticArray<byte, 32>, // We cannot write to a box during deployment
+		//_attester: bytes32, // We cannot write to a box during deployment
 		_maxMessageBodySize: uint<64>,
 		_version: uint<32>
 	): void {

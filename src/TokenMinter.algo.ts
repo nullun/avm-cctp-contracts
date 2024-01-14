@@ -10,11 +10,11 @@ class TokenMinter extends Contract {
 	 * @param remoteDomain remote domain
 	 * @param remoteToken token on `remoteDomain` corresponding to `localToken`
 	 */
-	// TokenPairLinked(asset,uint32,StaticArray<byte, 32>)
+	// TokenPairLinked(asset,uint32,bytes32)
 	TokenPairLinked = new EventLogger<{
 		localToken: Asset,
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	}>();
 
 	/**
@@ -23,11 +23,11 @@ class TokenMinter extends Contract {
 	 * @param remoteDomain remote domain
 	 * @param remoteToken token on `remoteDomain` unlinked from `localToken`
 	 */
-	// TokenPairUnlinked(asset,uint32,StaticArray<byte, 32>)
+	// TokenPairUnlinked(asset,uint32,bytes32)
 	TokenPairUnlinked = new EventLogger<{
 		localToken: Asset,
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	}>();
 
 	/**
@@ -80,7 +80,7 @@ class TokenMinter extends Contract {
 
 	// Supported mintable tokens on remote domains, mapped to their corresponding local token
 	// hash(remote domain & remote token bytes32 address) => local token (asset)
-	remoteTokensToLocalTokens = BoxMap<StaticArray<byte, 32>, Asset>();
+	remoteTokensToLocalTokens = BoxMap<bytes32, Asset>();
 
 	// Role with permission to manage token address mapping across domains, and per-message burn limits
 	_tokenController = GlobalStateKey<Address>();
@@ -152,9 +152,9 @@ class TokenMinter extends Contract {
 	 */
 	private _hashRemoteDomainAndToken(
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
-	): StaticArray<byte, 32> {
-		return keccak256(concat(rawBytes(remoteDomain), remoteToken)) as StaticArray<byte, 32>;
+		remoteToken: bytes32
+	): bytes32 {
+		return keccak256(concat(rawBytes(remoteDomain), remoteToken)) as bytes32;
 	}
 
 	/**
@@ -165,9 +165,9 @@ class TokenMinter extends Contract {
 	 */
 	private _getLocalToken(
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	): Asset {
-		const _remoteTokensKey: StaticArray<byte, 32> = this._hashRemoteDomainAndToken(
+		const _remoteTokensKey: bytes32 = this._hashRemoteDomainAndToken(
 			remoteDomain,
 			remoteToken
 		);
@@ -190,7 +190,7 @@ class TokenMinter extends Contract {
 	linkTokenPair(
 		localToken: Asset,
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	): void {
 		this.onlyTokenController();
 
@@ -201,7 +201,7 @@ class TokenMinter extends Contract {
 			assetAmount: 0
 		});
 
-		const _remoteTokensKey: StaticArray<byte, 32> = this._hashRemoteDomainAndToken(
+		const _remoteTokensKey: bytes32 = this._hashRemoteDomainAndToken(
 			remoteDomain,
 			remoteToken
 		);
@@ -231,13 +231,13 @@ class TokenMinter extends Contract {
 	unlinkTokenPair(
 		localToken: Asset,
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	): void {
 		this.onlyTokenController()
 
 		// TODO: CloseOut of ASA
 
-		const _remoteTokensKey: StaticArray<byte, 32> = this._hashRemoteDomainAndToken(
+		const _remoteTokensKey: bytes32 = this._hashRemoteDomainAndToken(
 			remoteDomain,
 			remoteToken
 		);
@@ -293,7 +293,7 @@ class TokenMinter extends Contract {
 	 */
 	mint(
 		sourceDomain: uint<32>,
-		burnToken: StaticArray<byte, 32>,
+		burnToken: bytes32,
 		to: Address,
 		amount: uint<64>
 	): Asset {
@@ -399,7 +399,7 @@ class TokenMinter extends Contract {
 	 */
 	getLocalToken(
 		remoteDomain: uint<32>,
-		remoteToken: StaticArray<byte, 32>
+		remoteToken: bytes32
 	): Asset {
 		return this._getLocalToken(remoteDomain, remoteToken);
 	}
