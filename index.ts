@@ -184,7 +184,7 @@ const main = async() => {
 
 	const step5_step1_appl_sp = await algod.getTransactionParams().do();
 	step5_step1_appl_sp.flatFee = true;
-	step5_step1_appl_sp.fee = 10000;
+	step5_step1_appl_sp.fee = 7000;
 
 	const MTRAN2_ADDRESS = algosdk.getApplicationAddress(AVM2_MESSAGE_TRANSMITTER_ID);
 
