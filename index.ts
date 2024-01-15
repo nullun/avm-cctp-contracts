@@ -1,5 +1,5 @@
 import algosdk from 'algosdk';
-import keccak from 'keccak';
+import { keccak256 } from 'js-sha3';
 
 const messageTransmitterAbi = require('./dist/MessageTransmitter.arc4.json');
 const tokenMessengerAbi = require('./dist/TokenMessenger.arc4.json');
@@ -147,16 +147,16 @@ const main = async() => {
 		if ('logs' in sts) {
 			for (const log of sts['logs']) {
 				//console.log(log);
-				const l = Buffer.from(log);
+				const l = Buffer.from(log, 'hex');
 				//console.log(l);
-				if (l.toString('hex').slice(0, 8) === '42a65f80') {
-					// Convert the byte array to a hexadecimal string
-					messageBody = l.slice(8).toString('hex');
+				if (l.slice(0, 4).toString('hex') === '42a65f80') {
+					// Extract just the messageBody
+					messageBody = l.slice(8);
 
-					// Calculate the Keccak-256 hash using the keccak library
-					const keccak256Hash = '0x' + keccak('keccak256').update(messageBody).digest('hex');
+					// Calculate the Keccak-256 hash
+					const keccak256Hash = '0x' + keccak256(messageBody);
 
-					console.log('Keccak-256 Hash:', keccak256Hash);
+					console.log('Hash:', keccak256Hash);
 					messageHash = keccak256Hash;
 				}
 			}
