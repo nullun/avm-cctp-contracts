@@ -539,8 +539,8 @@ class MessageTransmitter extends Contract {
 
 		// Validate message sender
 		// FIX: What?
-		const _sender = rawBytes(globals.callerApplicationAddress);
-		assert(rawBytes(globals.callerApplicationAddress) === _sender);
+		const _sender = _message._msgSender;
+		assert(<bytes32>(bzero(24) + itob(globals.callerApplicationID)) === _sender);
 
 		// Validate source domain
 		const _sourceDomain = _message._msgSourceDomain;

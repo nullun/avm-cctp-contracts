@@ -133,9 +133,7 @@ class TokenMessenger extends Contract {
 	 * @notice Only accept messages from the registered message transmitter on local domain
 	 */
 	private onlyLocalMessageTransmitter(): void {
-		// TODO: No idea what's going on here
-		// FIX: Use callerApplicationID instead?
-		//assert(globals.callerApplicationID === this.localMessageTransmitter.value);
+		assert(this.txn.sender === this.localMessageTransmitter.value.address);
 	}
 
 
@@ -533,9 +531,7 @@ class TokenMessenger extends Contract {
 		// No TokenMessenger set for given remote domain.
 		assert(this.remoteTokenMessengers(domain).exists);
 
-		// FIX: This isn't right
-		const _removedTokenMessenger: bytes32 = rawBytes(this.txn.sender) as bytes32;
-		//const _removedTokenMessenger: bytes32 = this.remoteTokenMessengers(domain).value;
+		const _removedTokenMessenger = this.remoteTokenMessengers(domain).value;
 		this.remoteTokenMessengers(domain).delete();
 
 		this.RemoteTokenMessengerRemoved.log({
