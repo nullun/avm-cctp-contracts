@@ -1,0 +1,398 @@
+{
+  "name": "MessageTransmitter",
+  "desc": "",
+  "methods": [
+    {
+      "name": "transferOwnership",
+      "desc": "@devTransfers ownership of the application to a new account (`newOwner`).Can only be called by the current owner.",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "enableAttester",
+      "desc": "@noticeEnables an attester@devOnly callable by attesterManager. New attester must not be attesters.",
+      "args": [
+        {
+          "name": "newAttester",
+          "type": "byte[32]",
+          "desc": "attester to enable"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "offsetOfEnabledAttester",
+      "desc": "@noticereturns the index of a given`attester`, else fails",
+      "args": [
+        {
+          "name": "attester",
+          "type": "byte[32]",
+          "desc": "attester to retrieve index of@returnindex of given`attester`, else fails"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "getNumEnabledAttesters",
+      "desc": "@noticereturns the number of enabled attesters@returnnumber of enabled attesters",
+      "args": [],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "updateAttesterManager",
+      "desc": "FIX: onlyOwner or onlyAttesterManager?@devAllows the current attester manager to transfer control of the application to a newAttesterManager.",
+      "args": [
+        {
+          "name": "newAttesterManager",
+          "type": "address",
+          "desc": "The address to update attester manager to."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "AttesterManagerUpdated",
+          "args": [
+            {
+              "name": "previousAttesterManager",
+              "type": "address"
+            },
+            {
+              "name": "newAttesterManager",
+              "type": "address"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "disableAttester",
+      "desc": "@noticeDisables an attester@devOnly callable by attesterManager. Disabling the attester is not allowed if there is only one attesterenabled, or if it would cause the number of enabled attesters to become less than signatureThreshold.(Attester must be currently enabled.)",
+      "args": [
+        {
+          "name": "attester",
+          "type": "byte[32]",
+          "desc": "attester to disable"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "setSignatureThreshold",
+      "desc": "@noticeSets the threshold of signatures required to attest to a message.(This is the m in m/n multisig.)@devnew signature threshold must be nonzero, and must not exceed numberof enabled attesters.",
+      "args": [
+        {
+          "name": "newSignatureThreshold",
+          "type": "uint64",
+          "desc": "new signature threshold"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "SignatureThresholdUpdated",
+          "args": [
+            {
+              "name": "oldSignatureThreshold",
+              "type": "uint64"
+            },
+            {
+              "name": "newSignatureThreshold",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "sendMessage",
+      "desc": "@noticeSend the message to the destination domain and recipient@devIncrement nonce, format the message, and emit`MessageSent`event with message information.",
+      "args": [
+        {
+          "name": "destinationDomain",
+          "type": "uint32",
+          "desc": "Domain of destination chain"
+        },
+        {
+          "name": "recipient",
+          "type": "byte[32]",
+          "desc": "Address of message recipient on destination chain as bytes32"
+        },
+        {
+          "name": "messageBody",
+          "type": "byte[]",
+          "desc": "Raw bytes content of message@returnnonce reserved by message"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "replaceMessage",
+      "desc": "@noticeReplace a message with a new message body and/or destination caller.@devThe`originalAttestation`must be a valid attestation of`originalMessage`.Reverts if msg.sender does not match sender of original message, or if the source domain of the original messagedoes not match this MessageTransmitter's local domain.",
+      "args": [
+        {
+          "name": "originalMessage",
+          "type": "byte[]",
+          "desc": "original message to replace"
+        },
+        {
+          "name": "originalAttestation",
+          "type": "byte[]",
+          "desc": "attestation of`originalMessage`"
+        },
+        {
+          "name": "newMessageBody",
+          "type": "byte[]",
+          "desc": "new message body of replaced message"
+        },
+        {
+          "name": "newDestinationCaller",
+          "type": "byte[32]",
+          "desc": "the new destination caller, which may be thesame as the original destination caller, a new destination caller, or an emptydestination caller (bytes32(0), indicating that any destination caller is valid.)"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "sendMessageWithCaller",
+      "desc": "@noticeSend the message to the destination domain and recipient, for a specified`destinationCaller`on thedestination domain.@devIncrement nonce, format the message, and emit`MessageSent`event with message information.WARNING: if the`destinationCaller`does not represent a valid address, then it will not be possibleto broadcast the message on the destination domain. This is an advanced feature, and the standardsendMessage() should be preferred for use cases where a specific destination caller is not required.",
+      "args": [
+        {
+          "name": "destinationDomain",
+          "type": "uint32",
+          "desc": "Domain of destination chain"
+        },
+        {
+          "name": "recipient",
+          "type": "byte[32]",
+          "desc": "Address of message recipient on destination domain as bytes32"
+        },
+        {
+          "name": "destinationCaller",
+          "type": "byte[32]",
+          "desc": "caller on the destination domain, as bytes32"
+        },
+        {
+          "name": "messageBody",
+          "type": "byte[]",
+          "desc": "Raw bytes content of message@returnnonce reserved by message"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "receiveMessage",
+      "desc": "@noticeReceive a message. Messages with a given noncecan only be broadcast once for a (sourceDomain, destinationDomain)pair. The message body of a valid message is passed to thespecified recipient for further processing.@devAttestation format:A valid attestation is the concatenated 65-byte signature(s) of exactly`thresholdSignature`signatures, in increasing order of attester address.***If the attester addresses recovered from signatures are not inincreasing order, signature verification will fail.***If incorrect number of signatures or duplicate signatures are supplied,signature verification will fail.Message format:Field                 Bytes      Type       Indexversion               4          uint32     0sourceDomain          4          uint32     4destinationDomain     4          uint32     8nonce                 8          uint64     12sender                32         bytes32    20recipient             32         bytes32    52destinationCaller     32         bytes32    84messageBody           dynamic    bytes      116",
+      "args": [
+        {
+          "name": "fee",
+          "type": "pay"
+        },
+        {
+          "name": "message",
+          "type": "byte[]",
+          "desc": "Message bytes"
+        },
+        {
+          "name": "attestation",
+          "type": "byte[]",
+          "desc": "Concatenated 65-byte signature(s) of`message`, in increasing orderof the attester address recovered from signatures.@returnsuccess bool, true if successful"
+        }
+      ],
+      "returns": {
+        "type": "bool"
+      },
+      "events": [
+        {
+          "name": "MessageReceived",
+          "args": [
+            {
+              "name": "caller",
+              "type": "address"
+            },
+            {
+              "name": "sourceDomain",
+              "type": "uint32"
+            },
+            {
+              "name": "nonce",
+              "type": "uint64"
+            },
+            {
+              "name": "sender",
+              "type": "byte[32]"
+            },
+            {
+              "name": "messageBody",
+              "type": "byte[]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "setMaxMessageBodySize",
+      "desc": "@noticeSets the max message body size@devThis value should not be reduced without good reason,to avoid impacting users who rely on large messages.",
+      "args": [
+        {
+          "name": "newMaxMessageBodySize",
+          "type": "uint64",
+          "desc": "new max message body size, in bytes"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "MaxMessageBodySizeUpdated",
+          "args": [
+            {
+              "name": "newMaxMessageBodySize",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "args": [
+        {
+          "name": "_localDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "_maxMessageBodySize",
+          "type": "uint64"
+        },
+        {
+          "name": "_version",
+          "type": "uint32"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "OwnershipTransferred",
+      "args": [
+        {
+          "name": "oldAddress",
+          "type": "address"
+        },
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "AttesterManagerUpdated",
+      "args": [
+        {
+          "name": "previousAttesterManager",
+          "type": "address"
+        },
+        {
+          "name": "newAttesterManager",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "SignatureThresholdUpdated",
+      "args": [
+        {
+          "name": "oldSignatureThreshold",
+          "type": "uint64"
+        },
+        {
+          "name": "newSignatureThreshold",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "MessageSent",
+      "args": [
+        {
+          "name": "message",
+          "type": "byte[]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "MessageReceived",
+      "args": [
+        {
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "name": "sourceDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "nonce",
+          "type": "uint64"
+        },
+        {
+          "name": "sender",
+          "type": "byte[32]"
+        },
+        {
+          "name": "messageBody",
+          "type": "byte[]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "MaxMessageBodySizeUpdated",
+      "args": [
+        {
+          "name": "newMaxMessageBodySize",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    }
+  ]
+}

@@ -1,0 +1,397 @@
+{
+  "name": "TokenMessenger",
+  "desc": "",
+  "methods": [
+    {
+      "name": "depositForBurn",
+      "desc": "@noticeDeposits and burns tokens from sender to be minted on destination domain.Emits a`DepositForBurn`event.@devreverts if:- given burnToken is not supported- given destinationDomain has no TokenMessenger registered- transferFrom() reverts. For example, if sender's burnToken balance or approved allowanceto this contract is less than`amount`.- burn() reverts. For example, if`amount`is 0.- MessageTransmitter returns false or reverts.",
+      "args": [
+        {
+          "name": "axfer",
+          "type": "axfer",
+          "desc": "asset transfer of tokens to burn"
+        },
+        {
+          "name": "destinationDomain",
+          "type": "uint32",
+          "desc": "destination domain"
+        },
+        {
+          "name": "mintRecipient",
+          "type": "byte[32]",
+          "desc": "address of mint recipient on destination domain"
+        },
+        {
+          "name": "burnToken",
+          "type": "asset",
+          "desc": "address of contract to burn deposited tokens, on local domain@return_nonce unique nonce reserved by message"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "depositForBurnWithCaller",
+      "desc": "@noticeDeposits and burns tokens from sender to be minted on destination domain. The minton the destination domain must be called by`destinationCaller`.WARNING: if the`destinationCaller`does not represent a valid address as bytes32, then it will not be possibleto broadcast the message on the destination domain. This is an advanced feature, and the standarddepositForBurn() should be preferred for use cases where a specific destination caller is not required.Emits a`DepositForBurn`event.@devreverts if:- given destinationCaller is zero address- given burnToken is not supported- given destinationDomain has no TokenMessenger registered- transferFrom() reverts. For example, if sender's burnToken balance or approved allowanceto this contract is less than`amount`.- burn() reverts. For example, if`amount`is 0.- MessageTransmitter returns false or reverts.",
+      "args": [
+        {
+          "name": "axfer",
+          "type": "axfer",
+          "desc": "amount of tokens to burn (must be non-zero)"
+        },
+        {
+          "name": "destinationDomain",
+          "type": "uint32",
+          "desc": "destination domain"
+        },
+        {
+          "name": "mintRecipient",
+          "type": "byte[32]",
+          "desc": "address of mint recipient on destination domain"
+        },
+        {
+          "name": "burnToken",
+          "type": "asset",
+          "desc": "address of contract to burn deposited tokens, on local domain"
+        },
+        {
+          "name": "destinationCaller",
+          "type": "byte[32]",
+          "desc": "caller on the destination domain, as bytes32@returnnonce unique nonce reserved by message"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "replaceDepositForBurn",
+      "desc": "@noticeReplace a BurnMessage to change the mint recipient and/ordestination caller. Allows the sender of a previous BurnMessage(created by depositForBurn or depositForBurnWithCaller)to send a new BurnMessage to replace the original.The new BurnMessage will reuse the amount and burn token of the original,without requiring a new deposit.@devThe new message will reuse the original message's nonce. For agiven nonce, all replacement message(s) and the original message arevalid to broadcast on the destination domain, until the first messageat the nonce confirms, at which point all others are invalidated.Note: The msg.sender of the replaced message must be the same as themsg.sender of the original message.",
+      "args": [
+        {
+          "name": "originalMessage",
+          "type": "byte[]",
+          "desc": "original message bytes (to replace)"
+        },
+        {
+          "name": "originalAttestation",
+          "type": "byte[]",
+          "desc": "original attestation bytes"
+        },
+        {
+          "name": "newDestinationCaller",
+          "type": "byte[32]",
+          "desc": "the new destination caller, which may be thesame as the original destination caller, a new destination caller, or an emptydestination caller (bytes32(0), indicating that any destination caller is valid.)"
+        },
+        {
+          "name": "newMintRecipient",
+          "type": "byte[32]",
+          "desc": "the new mint recipient, which may be the same as theoriginal mint recipient, or different."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "DepositForBurn",
+          "args": [
+            {
+              "name": "nonce",
+              "type": "uint64"
+            },
+            {
+              "name": "burnToken",
+              "type": "uint64"
+            },
+            {
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "name": "depositor",
+              "type": "address"
+            },
+            {
+              "name": "mintRecipient",
+              "type": "byte[32]"
+            },
+            {
+              "name": "destinationDomain",
+              "type": "uint32"
+            },
+            {
+              "name": "destinationTokenMessenger",
+              "type": "byte[32]"
+            },
+            {
+              "name": "destinationCaller",
+              "type": "byte[32]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "handleReceiveMessage",
+      "desc": "@noticeHandles an incoming message received by the local MessageTransmitter,and takes the appropriate action. For a burn message, mints theassociated token to the requested recipient on the local domain.@devValidates the local sender is the local MessageTransmitter, and theremote sender is a registered remote TokenMessenger for`remoteDomain`.",
+      "args": [
+        {
+          "name": "remoteDomain",
+          "type": "uint32",
+          "desc": "The domain where the message originated from."
+        },
+        {
+          "name": "sender",
+          "type": "byte[32]",
+          "desc": "The sender of the message (remote TokenMessenger)."
+        },
+        {
+          "name": "messageBody",
+          "type": "byte[]",
+          "desc": "The message body bytes.@returnsuccess Bool, true if successful."
+        }
+      ],
+      "returns": {
+        "type": "bool"
+      }
+    },
+    {
+      "name": "addRemoteTokenMessenger",
+      "desc": "@noticeAdd the TokenMessenger for a remote domain.@devReverts if there is already a TokenMessenger set for domain.",
+      "args": [
+        {
+          "name": "domain",
+          "type": "uint32",
+          "desc": "Domain of remote TokenMessenger."
+        },
+        {
+          "name": "tokenMessenger",
+          "type": "byte[32]",
+          "desc": "Address of remote TokenMessenger as bytes32."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "RemoteTokenMessengerAdded",
+          "args": [
+            {
+              "name": "domain",
+              "type": "uint32"
+            },
+            {
+              "name": "tokenMessenger",
+              "type": "byte[32]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "removeRemoteTokenMessenger",
+      "desc": "@noticeRemove the TokenMessenger for a remote domain.@devReverts if there is no TokenMessenger set for`domain`.",
+      "args": [
+        {
+          "name": "domain",
+          "type": "uint32",
+          "desc": "Domain of remote TokenMessenger"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "RemoteTokenMessengerRemoved",
+          "args": [
+            {
+              "name": "domain",
+              "type": "uint32"
+            },
+            {
+              "name": "tokenMessenger",
+              "type": "byte[32]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "addLocalMinter",
+      "desc": "@noticeAdd minter for the local domain.@devReverts if a minter is already set for the local domain.",
+      "args": [
+        {
+          "name": "newLocalMinter",
+          "type": "application",
+          "desc": "The address of the minter on the local domain."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "LocalMinterAdded",
+          "args": [
+            {
+              "name": "localMinter",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "removeLocalMinter",
+      "desc": "@noticeRemove the minter for the local domain.@devReverts if the minter of the local domain is not set.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "LocalMinterRemoved",
+          "args": [
+            {
+              "name": "localMinter",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "args": [
+        {
+          "name": "_messageTransmitter",
+          "type": "application",
+          "desc": "Message transmitter address"
+        },
+        {
+          "name": "_messageBodyVersion",
+          "type": "uint32",
+          "desc": "Message body version"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "DepositForBurn",
+      "args": [
+        {
+          "name": "nonce",
+          "type": "uint64"
+        },
+        {
+          "name": "burnToken",
+          "type": "uint64"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "name": "depositor",
+          "type": "address"
+        },
+        {
+          "name": "mintRecipient",
+          "type": "byte[32]"
+        },
+        {
+          "name": "destinationDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "destinationTokenMessenger",
+          "type": "byte[32]"
+        },
+        {
+          "name": "destinationCaller",
+          "type": "byte[32]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "MintAndWithdraw",
+      "args": [
+        {
+          "name": "mintRecipient",
+          "type": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "name": "mintToken",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "RemoteTokenMessengerAdded",
+      "args": [
+        {
+          "name": "domain",
+          "type": "uint32"
+        },
+        {
+          "name": "tokenMessenger",
+          "type": "byte[32]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "RemoteTokenMessengerRemoved",
+      "args": [
+        {
+          "name": "domain",
+          "type": "uint32"
+        },
+        {
+          "name": "tokenMessenger",
+          "type": "byte[32]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "LocalMinterAdded",
+      "args": [
+        {
+          "name": "localMinter",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "LocalMinterRemoved",
+      "args": [
+        {
+          "name": "localMinter",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    }
+  ]
+}

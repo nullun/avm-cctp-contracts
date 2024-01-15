@@ -1,0 +1,345 @@
+{
+  "name": "TokenMinter",
+  "desc": "",
+  "methods": [
+    {
+      "name": "linkTokenPair",
+      "desc": "@noticeLinks a pair of local and remote tokens to be supported by this TokenMinter.@devAssociates a (`remoteToken`,`localToken`) pair by updating remoteTokensToLocalTokens mapping.Reverts if the remote token (for the given`remoteDomain`) already maps to a nonzero local token.Note:- A remote token (on a certain remote domain) can only map to one local token, but many remote tokenscan map to the same local token.- Setting a token pair does not enable the`localToken`(that requires calling setLocalTokenEnabledStatus.)",
+      "args": [
+        {
+          "name": "localToken",
+          "type": "asset"
+        },
+        {
+          "name": "remoteDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "remoteToken",
+          "type": "byte[32]"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "TokenPairLinked",
+          "args": [
+            {
+              "name": "localToken",
+              "type": "uint64"
+            },
+            {
+              "name": "remoteDomain",
+              "type": "uint32"
+            },
+            {
+              "name": "remoteToken",
+              "type": "byte[32]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "unlinkTokenPair",
+      "desc": "@noticeUnlinks a pair of local and remote tokens for this TokenMinter.@devRemoves link from`remoteToken`, to`localToken`for given`remoteDomain`by updating remoteTokensToLocalTokens mapping.Reverts if the remote token (for the given`remoteDomain`) already maps to the zero address.Note:- A remote token (on a certain remote domain) can only map to one local token, but many remote tokenscan map to the same local token.- Unlinking a token pair does not disable burning the`localToken`(that requires calling setMaxBurnAmountPerMessage.)",
+      "args": [
+        {
+          "name": "localToken",
+          "type": "asset"
+        },
+        {
+          "name": "remoteDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "remoteToken",
+          "type": "byte[32]"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "TokenPairUnlinked",
+          "args": [
+            {
+              "name": "localToken",
+              "type": "uint64"
+            },
+            {
+              "name": "remoteDomain",
+              "type": "uint32"
+            },
+            {
+              "name": "remoteToken",
+              "type": "byte[32]"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "setMaxBurnAmountPerMessage",
+      "desc": "@noticeSets the maximum burn amount per message for a given`localToken`.@devBurns with amounts exceeding`burnLimitPerMessage`will revert. Mints do notrespect this value, so if this limit is reduced, previously burned tokens will stillbe mintable.",
+      "args": [
+        {
+          "name": "localToken",
+          "type": "asset",
+          "desc": "Local token to set the maximum burn amount per message of."
+        },
+        {
+          "name": "burnLimitPerMessage",
+          "type": "uint64",
+          "desc": "Maximum burn amount per message to set."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "SetBurnLimitPerMessage",
+          "args": [
+            {
+              "name": "token",
+              "type": "uint64"
+            },
+            {
+              "name": "burnLimitPerMessage",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "mint",
+      "desc": "@noticeMints`amount`of local tokens corresponding to thegiven (`sourceDomain`,`burnToken`) pair, to`to`address.@devreverts if the (`sourceDomain`,`burnToken`) pair does notmap to a nonzero local token address. This mapping can be queried usinggetLocalToken().",
+      "args": [
+        {
+          "name": "sourceDomain",
+          "type": "uint32",
+          "desc": "Source domain where`burnToken`was burned."
+        },
+        {
+          "name": "burnToken",
+          "type": "byte[32]",
+          "desc": "Burned token address as bytes32."
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "desc": "Address to receive minted tokens, corresponding to`burnToken`,on this domain."
+        },
+        {
+          "name": "amount",
+          "type": "uint64",
+          "desc": "Amount of tokens to mint. Must be less than or equalto the minterAllowance of this TokenMinter for given`_mintToken`.@returnmintToken token minted."
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "burn",
+      "desc": "@noticeBurn tokens owned by this TokenMinter.",
+      "args": [
+        {
+          "name": "burnToken",
+          "type": "asset",
+          "desc": "burnable token id."
+        },
+        {
+          "name": "burnAmount",
+          "type": "uint64",
+          "desc": "amount of tokens to burn. Must be>0, and<= maximum burn amount per message."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "addLocalTokenMessenger",
+      "desc": "@noticeAdd TokenMessenger for the local domain. Only this TokenMessengerhas permission to call mint() and burn() on this TokenMinter.@devReverts if a TokenMessenger is already set for the local domain.",
+      "args": [
+        {
+          "name": "newLocalTokenMessenger",
+          "type": "application",
+          "desc": "The address of the new TokenMessenger on the local domain."
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "LocalTokenMessengerAdded",
+          "args": [
+            {
+              "name": "localTokenMessenger",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "removeLocalTokenMessenger",
+      "desc": "@noticeRemove the TokenMessenger for the local domain.@devReverts if the TokenMessenger of the local domain is not set.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "LocalTokenMessengerRemoved",
+          "args": [
+            {
+              "name": "localTokenMessenger",
+              "type": "uint64"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "setTokenController",
+      "desc": "@noticeSet tokenController to`newTokenController`, andemit`SetTokenController`event.@devnewTokenController must be nonzero.",
+      "args": [
+        {
+          "name": "newTokenController",
+          "type": "address",
+          "desc": "address of new token controller"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "getLocalToken",
+      "desc": "@noticeGet the local token id associated with the givenremote domain and token.",
+      "args": [
+        {
+          "name": "remoteDomain",
+          "type": "uint32",
+          "desc": "Remote domain"
+        },
+        {
+          "name": "remoteToken",
+          "type": "byte[32]",
+          "desc": "Remote token@returnlocal token id"
+        }
+      ],
+      "returns": {
+        "type": "uint64"
+      }
+    },
+    {
+      "name": "deploy",
+      "args": [
+        {
+          "name": "_tokenController",
+          "type": "address",
+          "desc": "Token controller address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "TokenPairLinked",
+      "args": [
+        {
+          "name": "localToken",
+          "type": "uint64"
+        },
+        {
+          "name": "remoteDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "remoteToken",
+          "type": "byte[32]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "TokenPairUnlinked",
+      "args": [
+        {
+          "name": "localToken",
+          "type": "uint64"
+        },
+        {
+          "name": "remoteDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "remoteToken",
+          "type": "byte[32]"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "SetBurnLimitPerMessage",
+      "args": [
+        {
+          "name": "token",
+          "type": "uint64"
+        },
+        {
+          "name": "burnLimitPerMessage",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "SetTokenController",
+      "args": [
+        {
+          "name": "tokenController",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "LocalTokenMessengerAdded",
+      "args": [
+        {
+          "name": "localTokenMessenger",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "LocalTokenMessengerRemoved",
+      "args": [
+        {
+          "name": "localTokenMessenger",
+          "type": "uint64"
+        }
+      ],
+      "desc": ""
+    }
+  ]
+}
