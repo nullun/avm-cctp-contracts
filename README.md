@@ -33,18 +33,54 @@ bunx tealscript src/*.algo.ts dist
 
 ## Test
 
-Steps to test:
+Steps to test on dual AVM chains.
+
+Summary
 
 1. Deploy contracts
-2. Fund accounts
+1. Fund accounts
 	1. User needs FakeUSDC1 to burn
-	2. Both Token Minters need their respective assets
-3. Make sure a CCTP attestation service is running
-4. Run `bun index.ts` to simulate a CCTP transfer
+	1. Both Token Minters need their respective assets
+1. Make sure a CCTP attestation service is running
+1. Run `bun index.ts` to simulate a CCTP transfer
+
+Detailed
+
+1. Create Assets
+    1. [AVM1] Create ASA with a valid reserve address
+    1. [AVM2] Create ASA with a valid reserve address
+1. Deploy Contracts
+    1. [AVM1] Deploy MessageTransmitter
+    1. [AVM2] Deploy MessageTransmitter
+    1. [AVM1] Deploy TokenMessenger
+    1. [AVM2] Deploy TokenMessenger
+    1. [AVM1] Deploy TokenMinter
+    1. [AVM2] Deploy TokenMinter
+1. Configure MessageTransmitter
+    1. [AVM1] Send MBR to MessageTransmitter for enabledAttester box
+    1. [AVM1] Add Attester to MessageTransmitter (`enableAttester`)
+    1. [AVM2] Send MBR to MessageTransmitter for enabledAttester box
+    1. [AVM2] Add Attester to MessageTransmitter (`enableAttester`)
+1. Configure TokenMessenger
+    1. [AVM1] Send MBR to TokenMessenger for remoteTokenMessengers box
+    1. [AVM1] Add remote TokenMessenger to TokenMessenger (`addRemoteTokenMessenger`)
+    1. [AVM2] Send MBR to TokenMessenger for remoteTokenMessengers box
+    1. [AVM2] Add remote TokenMessenger to TokenMessenger (`addRemoteTokenMessenger`)
+    1. [AVM1] Add local TokenMinter to TokenMessenger (`addLocalMinter`)
+    1. [AVM2] Add local TokenMinter to TokenMessenger (`addLocalMinter`)
+1. Configure TokenMinter
+    1. [AVM1] Send MBR to TokenMinter for holding hash(remoteDomain+assetId) box
+    1. [AVM1] Link remote domain + local token to remote token in TokenMinter (`linkTokenPair`)
+    1. [AVM2] Send MBR to TokenMinter for holding hash(remoteDomain+assetId) box
+    1. [AVM2] Link remote domain + local token to remote token in TokenMinter (`linkTokenPair`)
+    1. [AVM1] Set max burn amount per message for asset in TokenMinter (`setMaxBurnAmountPerMessage`)
+    1. [AVM2] Set max burn amount per message for asset in TokenMinter (`setMaxBurnAmountPerMessage`)
+    1. [AVM1] Add local TokenMessenger to TokenMinter (`addLocalTokenMessenger`)
+    1. [AVM2] Add local TokenMessenger to TokenMinter (`addLocalTokenMessenger`)
 
 ## Useful transactions
 
-depositForBurn
+### depositForBurn
 
 ```bash
 goal asset send \
@@ -70,7 +106,7 @@ goal app method \
     --foreign-app $MessageTransmitter
 ```
 
-sign message
+### sign message
 
 Please first open `sign_message.ts` and add the attester private key and log from the depositForBurn.
 
@@ -78,7 +114,7 @@ Please first open `sign_message.ts` and add the attester private key and log fro
 bun sign_message.ts
 ```
 
-receiveMessage (WORK IN PROGRESS)
+### receiveMessage
 
 ```bash
 goal clerk send \
