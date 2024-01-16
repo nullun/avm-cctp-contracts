@@ -27,7 +27,7 @@ NOT_IMPLEMENTED:
 onlyOwner:
 	proto 0 0
 
-	// src/MessageTransmitter.algo.ts:145
+	// src/MessageTransmitter.algo.ts:135
 	// assert(this.txn.sender === this.owner.value)
 	txn Sender
 	byte 0x6f776e6572 // "owner"
@@ -42,7 +42,7 @@ onlyOwner:
 onlyAttesterManager:
 	proto 0 0
 
-	// src/MessageTransmitter.algo.ts:152
+	// src/MessageTransmitter.algo.ts:142
 	// assert(this.txn.sender === this.attesterManager.value)
 	txn Sender
 	byte 0x61747465737465724d616e61676572 // "attesterManager"
@@ -61,7 +61,7 @@ _transferOwnership:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:163
+	// src/MessageTransmitter.algo.ts:153
 	// oldOwner: Address = this.owner.exists ? this.owner.value : globals.zeroAddress
 	txna Applications 0
 	byte 0x6f776e6572 // "owner"
@@ -79,13 +79,13 @@ ternary1_false:
 ternary1_end:
 	frame_bury 0 // oldOwner: Address
 
-	// src/MessageTransmitter.algo.ts:164
+	// src/MessageTransmitter.algo.ts:154
 	// this.owner.value = newOwner
 	byte 0x6f776e6572 // "owner"
 	frame_dig -1 // newOwner: Address
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:166
+	// src/MessageTransmitter.algo.ts:156
 	// this.OwnershipTransferred.log({ oldAddress: oldOwner, newAddress: newOwner })
 	byte 0x9a223efb // OwnershipTransferred(address,address)
 	frame_dig 0 // oldOwner: Address
@@ -102,7 +102,7 @@ ternary1_end:
 _setAttesterManager:
 	proto 1 0
 
-	// src/MessageTransmitter.algo.ts:175
+	// src/MessageTransmitter.algo.ts:165
 	// this.attesterManager.value = _newAttesterManager
 	byte 0x61747465737465724d616e61676572 // "attesterManager"
 	frame_dig -1 // _newAttesterManager: Address
@@ -121,7 +121,7 @@ _isEnabledAttester:
 	byte 0x
 	dupn 3
 
-	// src/MessageTransmitter.algo.ts:185
+	// src/MessageTransmitter.algo.ts:175
 	// assert(attester != bzero(32) as bytes32)
 	frame_dig -1 // attester: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -133,7 +133,7 @@ _isEnabledAttester:
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:187
+	// src/MessageTransmitter.algo.ts:177
 	// boxSize = this.enabledAttesters.size - 2
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	box_len
@@ -143,7 +143,7 @@ _isEnabledAttester:
 	frame_bury 0 // boxSize: uint64
 
 	// if0_condition
-	// src/MessageTransmitter.algo.ts:188
+	// src/MessageTransmitter.algo.ts:178
 	// boxSize > 0
 	frame_dig 0 // boxSize: uint64
 	int 0
@@ -151,20 +151,20 @@ _isEnabledAttester:
 	bz if0_end
 
 	// if0_consequent
-	// src/MessageTransmitter.algo.ts:189
+	// src/MessageTransmitter.algo.ts:179
 	// numAttesters = boxSize / 32
 	frame_dig 0 // boxSize: uint64
 	int 32
 	/
 	frame_bury 1 // numAttesters: uint64
 
-	// src/MessageTransmitter.algo.ts:190
+	// src/MessageTransmitter.algo.ts:180
 	// index = 0
 	int 0
 	frame_bury 2 // index: uint64
 
 while_0:
-	// src/MessageTransmitter.algo.ts:191
+	// src/MessageTransmitter.algo.ts:181
 	// index < numAttesters
 	frame_dig 2 // index: uint64
 	frame_dig 1 // numAttesters: uint64
@@ -172,7 +172,7 @@ while_0:
 	bz while_0_end
 
 	// if1_condition
-	// src/MessageTransmitter.algo.ts:192
+	// src/MessageTransmitter.algo.ts:182
 	// attester == this.enabledAttesters.value[index]
 	frame_dig -1 // attester: bytes32
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
@@ -193,7 +193,7 @@ while_0:
 	bz if1_end
 
 	// if1_consequent
-	// src/MessageTransmitter.algo.ts:193
+	// src/MessageTransmitter.algo.ts:183
 	// return true;
 	int 1
 
@@ -205,7 +205,7 @@ while_0:
 	retsub
 
 if1_end:
-	// src/MessageTransmitter.algo.ts:195
+	// src/MessageTransmitter.algo.ts:185
 	// index = index + 1
 	frame_dig 2 // index: uint64
 	int 1
@@ -216,7 +216,7 @@ if1_end:
 while_0_end:
 
 if0_end:
-	// src/MessageTransmitter.algo.ts:199
+	// src/MessageTransmitter.algo.ts:189
 	// return false;
 	int 0
 
@@ -240,19 +240,19 @@ _recoverAttesterSignature:
 	byte 0x
 	dupn 5
 
-	// src/MessageTransmitter.algo.ts:212
+	// src/MessageTransmitter.algo.ts:202
 	// r = btobigint(_signature.r)
 	frame_dig -2 // _signature: Signature
 	extract 0 32
 	frame_bury 0 // r: bigint
 
-	// src/MessageTransmitter.algo.ts:213
+	// src/MessageTransmitter.algo.ts:203
 	// s = btobigint(_signature.s)
 	frame_dig -2 // _signature: Signature
 	extract 32 32
 	frame_bury 1 // s: bigint
 
-	// src/MessageTransmitter.algo.ts:214
+	// src/MessageTransmitter.algo.ts:204
 	// v = _signature.v - 27
 	frame_dig -2 // _signature: Signature
 	extract 64 1
@@ -261,7 +261,7 @@ _recoverAttesterSignature:
 	-
 	frame_bury 2 // v: unsafe uint8
 
-	// src/MessageTransmitter.algo.ts:216
+	// src/MessageTransmitter.algo.ts:206
 	// res = ecdsa_pk_recover("Secp256k1", _digest, <uint64>v, r, s)
 	frame_dig -1 // _digest: bytes32
 	frame_dig 2 // v: unsafe uint8
@@ -277,7 +277,7 @@ _recoverAttesterSignature:
 	concat
 	frame_bury 3 // res: (uint256,uint256)
 
-	// src/MessageTransmitter.algo.ts:217
+	// src/MessageTransmitter.algo.ts:207
 	// addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as bytes32
 	byte 0x000000000000000000000000
 	frame_dig 3 // res: (uint256,uint256)
@@ -294,7 +294,7 @@ _recoverAttesterSignature:
 	extract 0 32
 	frame_bury 4 // addr: byte[32]
 
-	// src/MessageTransmitter.algo.ts:219
+	// src/MessageTransmitter.algo.ts:209
 	// return addr
 	frame_dig 4 // addr: byte[32]
 
@@ -327,7 +327,7 @@ _verifyAttestationSignatures:
 	byte 0x
 	dupn 6
 
-	// src/MessageTransmitter.algo.ts:241
+	// src/MessageTransmitter.algo.ts:231
 	// assert(_attestation.length === signatureLength * this.signatureThreshold.value)
 	frame_dig -2 // _attestation: bytes
 	len
@@ -338,7 +338,7 @@ _verifyAttestationSignatures:
 	==
 	assert
 
-	// src/MessageTransmitter.algo.ts:245
+	// src/MessageTransmitter.algo.ts:235
 	// _latestAttesterAddress: bytes32 = bzero(32) as bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 	byte 0x
@@ -348,24 +348,24 @@ _verifyAttestationSignatures:
 	extract 0 32
 	frame_bury 0 // _latestAttesterAddress: bytes32
 
-	// src/MessageTransmitter.algo.ts:247
+	// src/MessageTransmitter.algo.ts:237
 	// _signatures = castBytes<Signature[]>(_attestation)
 	frame_dig -2 // _attestation: bytes
 	frame_bury 1 // _signatures: (byte[32],byte[32],uint8)[]
 
-	// src/MessageTransmitter.algo.ts:248
+	// src/MessageTransmitter.algo.ts:238
 	// _digest = keccak256(_message)
 	frame_dig -1 // _message: bytes
 	keccak256
 	frame_bury 2 // _digest: byte[32]
 
-	// src/MessageTransmitter.algo.ts:249
+	// src/MessageTransmitter.algo.ts:239
 	// i = 0
 	int 0
 	frame_bury 3 // i: uint64
 
 for_0:
-	// src/MessageTransmitter.algo.ts:249
+	// src/MessageTransmitter.algo.ts:239
 	// i < this.signatureThreshold.value
 	frame_dig 3 // i: uint64
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
@@ -376,14 +376,14 @@ for_0:
 	frame_bury 4 // accessor: accessor//0//_signature
 
 while_1:
-	// src/MessageTransmitter.algo.ts:253
+	// src/MessageTransmitter.algo.ts:243
 	// globals.opcodeBudget < 2500
 	global OpcodeBudget
 	int 2500
 	<
 	bz while_1_end
 
-	// src/MessageTransmitter.algo.ts:254
+	// src/MessageTransmitter.algo.ts:244
 	// sendAppCall({
 	// 					onCompletion: OnCompletion.DeleteApplication,
 	// 					approvalProgram: hex("0x0a8101"),
@@ -393,17 +393,17 @@ while_1:
 	int appl
 	itxn_field TypeEnum
 
-	// src/MessageTransmitter.algo.ts:255
+	// src/MessageTransmitter.algo.ts:245
 	// onCompletion: OnCompletion.DeleteApplication
 	int 5 // DeleteApplication
 	itxn_field OnCompletion
 
-	// src/MessageTransmitter.algo.ts:256
+	// src/MessageTransmitter.algo.ts:246
 	// approvalProgram: hex("0x0a8101")
 	byte 0x0a8101
 	itxn_field ApprovalProgram
 
-	// src/MessageTransmitter.algo.ts:257
+	// src/MessageTransmitter.algo.ts:247
 	// clearStateProgram: hex("0x0a8101")
 	byte 0x0a8101
 	itxn_field ClearStateProgram
@@ -417,7 +417,7 @@ while_1:
 	b while_1
 
 while_1_end:
-	// src/MessageTransmitter.algo.ts:262
+	// src/MessageTransmitter.algo.ts:252
 	// _recoveredAttester: bytes32 = this._recoverAttesterSignature(
 	// 				_digest,
 	// 				_signature
@@ -437,25 +437,25 @@ while_1_end:
 	callsub _recoverAttesterSignature
 	frame_bury 5 // _recoveredAttester: bytes32
 
-	// src/MessageTransmitter.algo.ts:268
+	// src/MessageTransmitter.algo.ts:258
 	// assert(btobigint(_recoveredAttester) > btobigint(_latestAttesterAddress))
 	frame_dig 5 // _recoveredAttester: bytes32
 	frame_dig 0 // _latestAttesterAddress: bytes32
 	b>
 	assert
 
-	// src/MessageTransmitter.algo.ts:269
+	// src/MessageTransmitter.algo.ts:259
 	// assert(this._isEnabledAttester(_recoveredAttester))
 	frame_dig 5 // _recoveredAttester: bytes32
 	callsub _isEnabledAttester
 	assert
 
-	// src/MessageTransmitter.algo.ts:271
+	// src/MessageTransmitter.algo.ts:261
 	// _latestAttesterAddress = _recoveredAttester
 	frame_dig 5 // _recoveredAttester: bytes32
 	frame_bury 0 // _latestAttesterAddress: bytes32
 
-	// src/MessageTransmitter.algo.ts:249
+	// src/MessageTransmitter.algo.ts:239
 	// i = i + 1
 	frame_dig 3 // i: uint64
 	int 1
@@ -476,13 +476,13 @@ _reserveAndIncrementNonce:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:282
+	// src/MessageTransmitter.algo.ts:272
 	// _nonceReserved: uint<64> = this.nextAvailableNonce.value
 	byte 0x6e657874417661696c61626c654e6f6e6365 // "nextAvailableNonce"
 	app_global_get
 	frame_bury 0 // _nonceReserved: uint<64>
 
-	// src/MessageTransmitter.algo.ts:283
+	// src/MessageTransmitter.algo.ts:273
 	// this.nextAvailableNonce.value = this.nextAvailableNonce.value + 1
 	byte 0x6e657874417661696c61626c654e6f6e6365 // "nextAvailableNonce"
 	dup
@@ -491,7 +491,7 @@ _reserveAndIncrementNonce:
 	+
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:285
+	// src/MessageTransmitter.algo.ts:275
 	// return _nonceReserved;
 	frame_dig 0 // _nonceReserved: uint<64>
 
@@ -516,7 +516,7 @@ _sendMessage:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:307
+	// src/MessageTransmitter.algo.ts:297
 	// assert(_messageBody.length <= this.maxMessageBodySize.value)
 	frame_dig -6 // _messageBody: bytes
 	len
@@ -525,7 +525,7 @@ _sendMessage:
 	<=
 	assert
 
-	// src/MessageTransmitter.algo.ts:308
+	// src/MessageTransmitter.algo.ts:298
 	// assert(_recipient != bzero(32) as bytes32)
 	frame_dig -2 // _recipient: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -537,7 +537,7 @@ _sendMessage:
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:311
+	// src/MessageTransmitter.algo.ts:301
 	// _message: Message = {
 	// 			_msgVersion: this.version.value,
 	// 			_msgSourceDomain: this.localDomain.value,
@@ -574,7 +574,7 @@ _sendMessage:
 	concat
 	frame_bury 0 // _message: Message
 
-	// src/MessageTransmitter.algo.ts:322
+	// src/MessageTransmitter.algo.ts:312
 	// this.MessageSent.log({ message: rawBytes(_message) + _messageBody })
 	byte 0x42a65f80 // MessageSent(byte[])
 	byte 0x // initial head
@@ -618,7 +618,7 @@ _sendMessage:
 _validateMessageFormat:
 	proto 1 0
 
-	// src/MessageTransmitter.algo.ts:345
+	// src/MessageTransmitter.algo.ts:335
 	// assert(rawBytes(_message).length >= 116)
 	frame_dig -1 // _message: Message
 	len
@@ -648,18 +648,18 @@ abi_route_transferOwnership:
 transferOwnership:
 	proto 1 0
 
-	// src/MessageTransmitter.algo.ts:356
+	// src/MessageTransmitter.algo.ts:346
 	// this.onlyOwner()
 	callsub onlyOwner
 
-	// src/MessageTransmitter.algo.ts:358
+	// src/MessageTransmitter.algo.ts:348
 	// assert(newOwner != globals.zeroAddress)
 	frame_dig -1 // newOwner: Address
 	global ZeroAddress
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:360
+	// src/MessageTransmitter.algo.ts:350
 	// this._transferOwnership(newOwner)
 	frame_dig -1 // newOwner: Address
 	callsub _transferOwnership
@@ -690,12 +690,12 @@ enableAttester:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:370
+	// src/MessageTransmitter.algo.ts:360
 	// this.onlyAttesterManager()
 	callsub onlyAttesterManager
 
 	// if2_condition
-	// src/MessageTransmitter.algo.ts:373
+	// src/MessageTransmitter.algo.ts:363
 	// !this.enabledAttesters.exists
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	box_len
@@ -705,28 +705,28 @@ enableAttester:
 	bz if2_end
 
 	// if2_consequent
-	// src/MessageTransmitter.algo.ts:374
+	// src/MessageTransmitter.algo.ts:364
 	// this.enabledAttesters.create(2)
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	int 2
 	box_create
 
 if2_end:
-	// src/MessageTransmitter.algo.ts:378
+	// src/MessageTransmitter.algo.ts:368
 	// assert(!this._isEnabledAttester(newAttester))
 	frame_dig -1 // newAttester: bytes32
 	callsub _isEnabledAttester
 	!
 	assert
 
-	// src/MessageTransmitter.algo.ts:380
+	// src/MessageTransmitter.algo.ts:370
 	// originalSize = this.enabledAttesters.size
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	box_len
 	assert
 	frame_bury 0 // originalSize: uint64
 
-	// src/MessageTransmitter.algo.ts:385
+	// src/MessageTransmitter.algo.ts:375
 	// box_resize("enabledAttesters", originalSize + 32)
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	frame_dig 0 // originalSize: uint64
@@ -734,7 +734,7 @@ if2_end:
 	+
 	box_resize
 
-	// src/MessageTransmitter.algo.ts:389
+	// src/MessageTransmitter.algo.ts:379
 	// box_splice("enabledAttesters", originalSize, 32, newAttester)
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	frame_dig 0 // originalSize: uint64
@@ -775,20 +775,20 @@ offsetOfEnabledAttester:
 	byte 0x
 	dup
 
-	// src/MessageTransmitter.algo.ts:398
+	// src/MessageTransmitter.algo.ts:390
 	// boxSize = this.enabledAttesters.size
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	box_len
 	assert
 	frame_bury 0 // boxSize: uint64
 
-	// src/MessageTransmitter.algo.ts:399
+	// src/MessageTransmitter.algo.ts:391
 	// i = 2
 	int 2
 	frame_bury 1 // i: uint64
 
 for_1:
-	// src/MessageTransmitter.algo.ts:399
+	// src/MessageTransmitter.algo.ts:391
 	// i < boxSize
 	frame_dig 1 // i: uint64
 	frame_dig 0 // boxSize: uint64
@@ -796,7 +796,7 @@ for_1:
 	bz for_1_end
 
 	// if3_condition
-	// src/MessageTransmitter.algo.ts:400
+	// src/MessageTransmitter.algo.ts:392
 	// attester == this.enabledAttesters.value[i]
 	frame_dig -1 // attester: bytes32
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
@@ -817,7 +817,7 @@ for_1:
 	bz if3_end
 
 	// if3_consequent
-	// src/MessageTransmitter.algo.ts:401
+	// src/MessageTransmitter.algo.ts:393
 	// return i;
 	frame_dig 1 // i: uint64
 
@@ -829,7 +829,7 @@ for_1:
 	retsub
 
 if3_end:
-	// src/MessageTransmitter.algo.ts:399
+	// src/MessageTransmitter.algo.ts:391
 	// i = i + 32
 	frame_dig 1 // i: uint64
 	int 32
@@ -838,12 +838,12 @@ if3_end:
 	b for_1
 
 for_1_end:
-	// src/MessageTransmitter.algo.ts:404
+	// src/MessageTransmitter.algo.ts:396
 	// assert(0)
 	int 0
 	assert
 
-	// src/MessageTransmitter.algo.ts:405
+	// src/MessageTransmitter.algo.ts:397
 	// return 0;
 	int 0
 
@@ -873,7 +873,7 @@ abi_route_getNumEnabledAttesters:
 getNumEnabledAttesters:
 	proto 0 1
 
-	// src/MessageTransmitter.algo.ts:413
+	// src/MessageTransmitter.algo.ts:405
 	// return this.enabledAttesters.size / 32;
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	box_len
@@ -907,18 +907,18 @@ updateAttesterManager:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:422
+	// src/MessageTransmitter.algo.ts:414
 	// this.onlyOwner()
 	callsub onlyOwner
 
-	// src/MessageTransmitter.algo.ts:424
+	// src/MessageTransmitter.algo.ts:416
 	// assert(newAttesterManager != globals.zeroAddress)
 	frame_dig -1 // newAttesterManager: Address
 	global ZeroAddress
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:426
+	// src/MessageTransmitter.algo.ts:418
 	// _oldAttesterManager: Address = this.attesterManager.exists ? this.attesterManager.value : globals.zeroAddress
 	txna Applications 0
 	byte 0x61747465737465724d616e61676572 // "attesterManager"
@@ -936,12 +936,12 @@ ternary3_false:
 ternary3_end:
 	frame_bury 0 // _oldAttesterManager: Address
 
-	// src/MessageTransmitter.algo.ts:427
+	// src/MessageTransmitter.algo.ts:419
 	// this._setAttesterManager(newAttesterManager)
 	frame_dig -1 // newAttesterManager: Address
 	callsub _setAttesterManager
 
-	// src/MessageTransmitter.algo.ts:429
+	// src/MessageTransmitter.algo.ts:421
 	// this.AttesterManagerUpdated.log({ previousAttesterManager: _oldAttesterManager, newAttesterManager: newAttesterManager })
 	byte 0x8d199cdf // AttesterManagerUpdated(address,address)
 	frame_dig 0 // _oldAttesterManager: Address
@@ -978,18 +978,18 @@ disableAttester:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:440
+	// src/MessageTransmitter.algo.ts:432
 	// this.onlyAttesterManager()
 	callsub onlyAttesterManager
 
-	// src/MessageTransmitter.algo.ts:442
+	// src/MessageTransmitter.algo.ts:434
 	// assert(this.getNumEnabledAttesters() > 1)
 	callsub getNumEnabledAttesters
 	int 1
 	>
 	assert
 
-	// src/MessageTransmitter.algo.ts:443
+	// src/MessageTransmitter.algo.ts:435
 	// assert(this.getNumEnabledAttesters() > this.signatureThreshold.value)
 	callsub getNumEnabledAttesters
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
@@ -997,19 +997,19 @@ disableAttester:
 	>
 	assert
 
-	// src/MessageTransmitter.algo.ts:446
+	// src/MessageTransmitter.algo.ts:438
 	// assert(this._isEnabledAttester(attester))
 	frame_dig -1 // attester: bytes32
 	callsub _isEnabledAttester
 	assert
 
-	// src/MessageTransmitter.algo.ts:449
+	// src/MessageTransmitter.algo.ts:441
 	// index = this.offsetOfEnabledAttester(attester)
 	frame_dig -1 // attester: bytes32
 	callsub offsetOfEnabledAttester
 	frame_bury 0 // index: uint64
 
-	// src/MessageTransmitter.algo.ts:453
+	// src/MessageTransmitter.algo.ts:445
 	// box_splice("enabledAttesters", (32 * index) + 2, 32, '')
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	int 32
@@ -1021,7 +1021,7 @@ disableAttester:
 	byte 0x // ""
 	box_splice
 
-	// src/MessageTransmitter.algo.ts:458
+	// src/MessageTransmitter.algo.ts:450
 	// box_resize("enabledAttesters", this.enabledAttesters.size - 32)
 	byte 0x656e61626c6564417474657374657273 // "enabledAttesters"
 	dup
@@ -1055,23 +1055,23 @@ setSignatureThreshold:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/MessageTransmitter.algo.ts:469
+	// src/MessageTransmitter.algo.ts:463
 	// this.onlyAttesterManager()
 	callsub onlyAttesterManager
 
-	// src/MessageTransmitter.algo.ts:471
+	// src/MessageTransmitter.algo.ts:465
 	// assert(newSignatureThreshold)
 	frame_dig -1 // newSignatureThreshold: uint<64>
 	assert
 
-	// src/MessageTransmitter.algo.ts:472
+	// src/MessageTransmitter.algo.ts:466
 	// assert(newSignatureThreshold <= this.getNumEnabledAttesters())
 	frame_dig -1 // newSignatureThreshold: uint<64>
 	callsub getNumEnabledAttesters
 	<=
 	assert
 
-	// src/MessageTransmitter.algo.ts:473
+	// src/MessageTransmitter.algo.ts:467
 	// assert(newSignatureThreshold != this.signatureThreshold.value)
 	frame_dig -1 // newSignatureThreshold: uint<64>
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
@@ -1079,19 +1079,19 @@ setSignatureThreshold:
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:475
+	// src/MessageTransmitter.algo.ts:469
 	// _oldSignatureThreshold: uint<64> = this.signatureThreshold.value
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
 	app_global_get
 	frame_bury 0 // _oldSignatureThreshold: uint<64>
 
-	// src/MessageTransmitter.algo.ts:476
+	// src/MessageTransmitter.algo.ts:470
 	// this.signatureThreshold.value = newSignatureThreshold
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
 	frame_dig -1 // newSignatureThreshold: uint<64>
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:478
+	// src/MessageTransmitter.algo.ts:472
 	// this.SignatureThresholdUpdated.log({ oldSignatureThreshold: _oldSignatureThreshold, newSignatureThreshold: this.signatureThreshold.value })
 	byte 0x2a3c3178 // SignatureThresholdUpdated(uint64,uint64)
 	frame_dig 0 // _oldSignatureThreshold: uint<64>
@@ -1152,12 +1152,12 @@ sendMessage:
 	byte 0x
 	dup
 
-	// src/MessageTransmitter.algo.ts:496
+	// src/MessageTransmitter.algo.ts:490
 	// _nonce = this._reserveAndIncrementNonce()
 	callsub _reserveAndIncrementNonce
 	frame_bury 0 // _nonce: uint64
 
-	// src/MessageTransmitter.algo.ts:497
+	// src/MessageTransmitter.algo.ts:491
 	// _messageSender = bzero(24) + itob(globals.callerApplicationID)
 	byte 0x000000000000000000000000000000000000000000000000
 	global CallerApplicationID
@@ -1165,7 +1165,7 @@ sendMessage:
 	concat
 	frame_bury 1 // _messageSender: byte[]
 
-	// src/MessageTransmitter.algo.ts:499
+	// src/MessageTransmitter.algo.ts:493
 	// this._sendMessage(
 	// 			destinationDomain,
 	// 			recipient,
@@ -1187,7 +1187,7 @@ sendMessage:
 	frame_dig -1 // destinationDomain: uint<32>
 	callsub _sendMessage
 
-	// src/MessageTransmitter.algo.ts:508
+	// src/MessageTransmitter.algo.ts:502
 	// return _nonce;
 	frame_dig 0 // _nonce: uint64
 
@@ -1243,25 +1243,25 @@ replaceMessage:
 	byte 0x
 	dupn 6
 
-	// src/MessageTransmitter.algo.ts:531
+	// src/MessageTransmitter.algo.ts:525
 	// this._verifyAttestationSignatures(originalMessage, originalAttestation)
 	frame_dig -2 // originalAttestation: bytes
 	frame_dig -1 // originalMessage: bytes
 	callsub _verifyAttestationSignatures
 
-	// src/MessageTransmitter.algo.ts:533
+	// src/MessageTransmitter.algo.ts:527
 	// message_start = extract_uint16(originalMessage, 0)
 	frame_dig -1 // originalMessage: bytes
 	int 0
 	extract_uint16
 	frame_bury 0 // message_start: uint64
 
-	// src/MessageTransmitter.algo.ts:534
+	// src/MessageTransmitter.algo.ts:528
 	// message_size = 116
 	int 116
 	frame_bury 1 // message_size: uint64
 
-	// src/MessageTransmitter.algo.ts:535
+	// src/MessageTransmitter.algo.ts:529
 	// _message = castBytes<Message>(substring3(originalMessage, message_start, message_start + message_size))
 	frame_dig -1 // originalMessage: bytes
 	frame_dig 0 // message_start: uint64
@@ -1271,12 +1271,12 @@ replaceMessage:
 	substring3
 	frame_bury 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 
-	// src/MessageTransmitter.algo.ts:538
+	// src/MessageTransmitter.algo.ts:532
 	// this._validateMessageFormat(_message)
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	callsub _validateMessageFormat
 
-	// src/MessageTransmitter.algo.ts:543
+	// src/MessageTransmitter.algo.ts:537
 	// assert(<bytes32>(bzero(24) + itob(globals.callerApplicationID)) === _sender)
 	byte 0x000000000000000000000000000000000000000000000000
 	global CallerApplicationID
@@ -1295,14 +1295,14 @@ replaceMessage:
 	==
 	assert
 
-	// src/MessageTransmitter.algo.ts:546
+	// src/MessageTransmitter.algo.ts:540
 	// _sourceDomain = _message._msgSourceDomain
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 4 4
 	btoi
 	frame_bury 3 // _sourceDomain: uint32
 
-	// src/MessageTransmitter.algo.ts:547
+	// src/MessageTransmitter.algo.ts:541
 	// assert(_sourceDomain === this.localDomain.value)
 	frame_dig 3 // _sourceDomain: uint32
 	byte 0x6c6f63616c446f6d61696e // "localDomain"
@@ -1311,21 +1311,21 @@ replaceMessage:
 	==
 	assert
 
-	// src/MessageTransmitter.algo.ts:549
+	// src/MessageTransmitter.algo.ts:543
 	// _destinationDomain = _message._msgDestinationDomain
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 8 4
 	btoi
 	frame_bury 4 // _destinationDomain: uint32
 
-	// src/MessageTransmitter.algo.ts:551
+	// src/MessageTransmitter.algo.ts:545
 	// _nonce = _message._msgNonce
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 12 8
 	btoi
 	frame_bury 5 // _nonce: uint64
 
-	// src/MessageTransmitter.algo.ts:553
+	// src/MessageTransmitter.algo.ts:547
 	// this._sendMessage(
 	// 			_destinationDomain,
 	// 			_recipient,
@@ -1406,7 +1406,7 @@ sendMessageWithCaller:
 	byte 0x
 	dup
 
-	// src/MessageTransmitter.algo.ts:583
+	// src/MessageTransmitter.algo.ts:577
 	// assert(destinationCaller != bzero(32) as bytes32)
 	frame_dig -3 // destinationCaller: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1418,12 +1418,12 @@ sendMessageWithCaller:
 	!=
 	assert
 
-	// src/MessageTransmitter.algo.ts:585
+	// src/MessageTransmitter.algo.ts:579
 	// _nonce = this._reserveAndIncrementNonce()
 	callsub _reserveAndIncrementNonce
 	frame_bury 0 // _nonce: uint64
 
-	// src/MessageTransmitter.algo.ts:586
+	// src/MessageTransmitter.algo.ts:580
 	// _messageSender = bzero(24) + itob(globals.callerApplicationID)
 	byte 0x000000000000000000000000000000000000000000000000
 	global CallerApplicationID
@@ -1431,7 +1431,7 @@ sendMessageWithCaller:
 	concat
 	frame_bury 1 // _messageSender: byte[]
 
-	// src/MessageTransmitter.algo.ts:588
+	// src/MessageTransmitter.algo.ts:582
 	// this._sendMessage(
 	// 			destinationDomain,
 	// 			recipient,
@@ -1448,7 +1448,7 @@ sendMessageWithCaller:
 	frame_dig -1 // destinationDomain: uint<32>
 	callsub _sendMessage
 
-	// src/MessageTransmitter.algo.ts:597
+	// src/MessageTransmitter.algo.ts:591
 	// return _nonce;
 	frame_dig 0 // _nonce: uint64
 
@@ -1529,13 +1529,13 @@ receiveMessage:
 	byte 0x
 	dupn 8
 
-	// src/MessageTransmitter.algo.ts:637
+	// src/MessageTransmitter.algo.ts:631
 	// this._verifyAttestationSignatures(message, attestation)
 	frame_dig -3 // attestation: bytes
 	frame_dig -2 // message: bytes
 	callsub _verifyAttestationSignatures
 
-	// src/MessageTransmitter.algo.ts:639
+	// src/MessageTransmitter.algo.ts:633
 	// verifyPayTxn(fee, {
 	// 			receiver: this.app.address,
 	// 			amount: (2500) + (400 * (12)),
@@ -1554,19 +1554,19 @@ receiveMessage:
 	==
 	assert
 
-	// src/MessageTransmitter.algo.ts:644
+	// src/MessageTransmitter.algo.ts:638
 	// message_start = extract_uint16(message, 0)
 	frame_dig -2 // message: bytes
 	int 0
 	extract_uint16
 	frame_bury 0 // message_start: uint64
 
-	// src/MessageTransmitter.algo.ts:645
+	// src/MessageTransmitter.algo.ts:639
 	// message_size = 116
 	int 116
 	frame_bury 1 // message_size: uint64
 
-	// src/MessageTransmitter.algo.ts:646
+	// src/MessageTransmitter.algo.ts:640
 	// _message = castBytes<Message>(substring3(message, message_start, message_start + message_size))
 	frame_dig -2 // message: bytes
 	frame_dig 0 // message_start: uint64
@@ -1576,14 +1576,14 @@ receiveMessage:
 	substring3
 	frame_bury 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 
-	// src/MessageTransmitter.algo.ts:648
+	// src/MessageTransmitter.algo.ts:642
 	// msg_body_start = message_start + message_size
 	frame_dig 0 // message_start: uint64
 	int 116 // message_size: uint64
 	+
 	frame_bury 3 // msg_body_start: uint64
 
-	// src/MessageTransmitter.algo.ts:649
+	// src/MessageTransmitter.algo.ts:643
 	// msg_body_size = message.length - msg_body_start
 	frame_dig -2 // message: bytes
 	len
@@ -1591,7 +1591,7 @@ receiveMessage:
 	-
 	frame_bury 4 // msg_body_size: uint64
 
-	// src/MessageTransmitter.algo.ts:650
+	// src/MessageTransmitter.algo.ts:644
 	// _messageBody = substring3(message, msg_body_start, msg_body_start + msg_body_size)
 	frame_dig -2 // message: bytes
 	frame_dig 3 // msg_body_start: uint64
@@ -1601,12 +1601,12 @@ receiveMessage:
 	substring3
 	frame_bury 5 // _messageBody: byte[]
 
-	// src/MessageTransmitter.algo.ts:661
+	// src/MessageTransmitter.algo.ts:655
 	// this._validateMessageFormat(_message)
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	callsub _validateMessageFormat
 
-	// src/MessageTransmitter.algo.ts:664
+	// src/MessageTransmitter.algo.ts:658
 	// assert(_message._msgDestinationDomain === this.localDomain.value)
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 8 4
@@ -1618,7 +1618,7 @@ receiveMessage:
 	assert
 
 	// if4_condition
-	// src/MessageTransmitter.algo.ts:667
+	// src/MessageTransmitter.algo.ts:661
 	// _message._msgDestinationCaller != bzero(32) as bytes32
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 84 32
@@ -1632,7 +1632,7 @@ receiveMessage:
 	bz if4_end
 
 	// if4_consequent
-	// src/MessageTransmitter.algo.ts:668
+	// src/MessageTransmitter.algo.ts:662
 	// assert(_message._msgDestinationCaller === rawBytes(this.txn.sender) as bytes32)
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 84 32
@@ -1649,7 +1649,7 @@ receiveMessage:
 	assert
 
 if4_end:
-	// src/MessageTransmitter.algo.ts:672
+	// src/MessageTransmitter.algo.ts:666
 	// assert(_message._msgVersion === this.version.value)
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 0 4
@@ -1660,7 +1660,7 @@ if4_end:
 	==
 	assert
 
-	// src/MessageTransmitter.algo.ts:677
+	// src/MessageTransmitter.algo.ts:671
 	// box: SourceDomainNonceBox = {
 	// 			sourceDomain: _message._msgSourceDomain,
 	// 			nonce: _message._msgNonce
@@ -1677,7 +1677,7 @@ if4_end:
 	concat
 	frame_bury 6 // box: SourceDomainNonceBox
 
-	// src/MessageTransmitter.algo.ts:683
+	// src/MessageTransmitter.algo.ts:677
 	// assert(!this.usedNonces(box).exists)
 	frame_dig 6 // box: SourceDomainNonceBox
 	box_len
@@ -1686,13 +1686,13 @@ if4_end:
 	!
 	assert
 
-	// src/MessageTransmitter.algo.ts:686
+	// src/MessageTransmitter.algo.ts:680
 	// this.usedNonces(box).create(0)
 	frame_dig 6 // box: SourceDomainNonceBox
 	int 0
 	box_create
 
-	// src/MessageTransmitter.algo.ts:689
+	// src/MessageTransmitter.algo.ts:683
 	// handled = sendMethodCall<[uint<32>, bytes32, bytes], boolean>({
 	// 			applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24)),
 	// 			name: 'handleReceiveMessage',
@@ -1708,7 +1708,7 @@ if4_end:
 	method "handleReceiveMessage(uint32,byte[32],byte[])bool"
 	itxn_field ApplicationArgs
 
-	// src/MessageTransmitter.algo.ts:690
+	// src/MessageTransmitter.algo.ts:684
 	// applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24))
 	frame_dig 2 // _message: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 	extract 52 32
@@ -1716,7 +1716,7 @@ if4_end:
 	extract_uint64
 	itxn_field ApplicationID
 
-	// src/MessageTransmitter.algo.ts:692
+	// src/MessageTransmitter.algo.ts:686
 	// methodArgs: [
 	// 				_message._msgSourceDomain,
 	// 				_message._msgSender,
@@ -1755,7 +1755,7 @@ if4_end:
 	getbit
 	frame_bury 7 // handled: bool
 
-	// src/MessageTransmitter.algo.ts:701
+	// src/MessageTransmitter.algo.ts:695
 	// this.MessageReceived.log(
 	// 			{
 	// 				caller: this.txn.sender,
@@ -1798,7 +1798,7 @@ if4_end:
 	concat
 	log
 
-	// src/MessageTransmitter.algo.ts:711
+	// src/MessageTransmitter.algo.ts:705
 	// return true;
 	int 1
 
@@ -1828,17 +1828,17 @@ abi_route_setMaxMessageBodySize:
 setMaxMessageBodySize:
 	proto 1 0
 
-	// src/MessageTransmitter.algo.ts:723
+	// src/MessageTransmitter.algo.ts:717
 	// this.onlyOwner()
 	callsub onlyOwner
 
-	// src/MessageTransmitter.algo.ts:725
+	// src/MessageTransmitter.algo.ts:719
 	// this.maxMessageBodySize.value = newMaxMessageBodySize
 	byte 0x6d61784d657373616765426f647953697a65 // "maxMessageBodySize"
 	frame_dig -1 // newMaxMessageBodySize: uint<64>
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:727
+	// src/MessageTransmitter.algo.ts:721
 	// this.MaxMessageBodySizeUpdated.log({ newMaxMessageBodySize: this.maxMessageBodySize.value })
 	byte 0x39d67349 // MaxMessageBodySizeUpdated(uint64)
 	byte 0x6d61784d657373616765426f647953697a65 // "maxMessageBodySize"
@@ -1880,7 +1880,7 @@ abi_route_deploy:
 deploy:
 	proto 3 0
 
-	// src/MessageTransmitter.algo.ts:739
+	// src/MessageTransmitter.algo.ts:733
 	// this.localDomain.value = _localDomain
 	byte 0x6c6f63616c446f6d61696e // "localDomain"
 	frame_dig -1 // _localDomain: uint<32>
@@ -1888,13 +1888,13 @@ deploy:
 	extract 4 4
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:740
+	// src/MessageTransmitter.algo.ts:734
 	// this.maxMessageBodySize.value = _maxMessageBodySize
 	byte 0x6d61784d657373616765426f647953697a65 // "maxMessageBodySize"
 	frame_dig -2 // _maxMessageBodySize: uint<64>
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:741
+	// src/MessageTransmitter.algo.ts:735
 	// this.version.value = _version
 	byte 0x76657273696f6e // "version"
 	frame_dig -3 // _version: uint<32>
@@ -1902,17 +1902,17 @@ deploy:
 	extract 4 4
 	app_global_put
 
-	// src/MessageTransmitter.algo.ts:744
+	// src/MessageTransmitter.algo.ts:738
 	// this._transferOwnership(this.txn.sender)
 	txn Sender
 	callsub _transferOwnership
 
-	// src/MessageTransmitter.algo.ts:747
+	// src/MessageTransmitter.algo.ts:741
 	// this._setAttesterManager(this.txn.sender)
 	txn Sender
 	callsub _setAttesterManager
 
-	// src/MessageTransmitter.algo.ts:748
+	// src/MessageTransmitter.algo.ts:742
 	// this.signatureThreshold.value = 1
 	byte 0x7369676e61747572655468726573686f6c64 // "signatureThreshold"
 	int 1

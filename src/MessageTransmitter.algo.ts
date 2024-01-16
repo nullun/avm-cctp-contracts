@@ -1,15 +1,5 @@
 import { Contract } from '@algorandfoundation/tealscript';
-
-type Message = {
-	_msgVersion: uint<32>;
-	_msgSourceDomain: uint<32>;
-	_msgDestinationDomain: uint<32>;
-	_msgNonce: uint<64>;
-	_msgSender: bytes32;
-	_msgRecipient: bytes32;
-	_msgDestinationCaller: bytes32;
-	// _msgBody: bytes // Think it may be better to keep it out of the type structure
-};
+import type { Message } from './messages/Message.algo';
 
 type SourceDomainNonceBox = {
 	sourceDomain: uint<32>;
@@ -387,6 +377,8 @@ class MessageTransmitter extends Contract {
 		// FIX: splice properly
 		// @ts-expect-error Not yet implemented
 		box_splice("enabledAttesters", originalSize, 32, newAttester);
+
+		// TODO: Verify `pay` txn includes MBR increase
 	}
 
 	/**
@@ -456,6 +448,8 @@ class MessageTransmitter extends Contract {
 		// FIX: resize properly
 		// @ts-expect-error Not yet implemented
 		box_resize("enabledAttesters", this.enabledAttesters.size - 32);
+
+		// TODO: Refund excess MBR
 	}
 
 	/**

@@ -29,7 +29,7 @@ NOT_IMPLEMENTED:
 onlyRemoteTokenMessenger:
 	proto 2 0
 
-	// src/TokenMessenger.algo.ts:129
+	// src/TokenMessenger.algo.ts:112
 	// assert(this.remoteTokenMessengers(domain).value === tokenMessenger)
 	frame_dig -1 // domain: uint<32>
 	itob
@@ -47,7 +47,7 @@ onlyRemoteTokenMessenger:
 onlyLocalMessageTransmitter:
 	proto 0 0
 
-	// src/TokenMessenger.algo.ts:136
+	// src/TokenMessenger.algo.ts:119
 	// assert(this.txn.sender === this.localMessageTransmitter.value.address)
 	txn Sender
 	byte 0x6c6f63616c4d6573736167655472616e736d6974746572 // "localMessageTransmitter"
@@ -65,13 +65,13 @@ onlyLocalMessageTransmitter:
 _getLocalMinter:
 	proto 0 1
 
-	// src/TokenMessenger.algo.ts:146
+	// src/TokenMessenger.algo.ts:129
 	// assert(this.localMinter.value)
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
 	app_global_get
 	assert
 
-	// src/TokenMessenger.algo.ts:148
+	// src/TokenMessenger.algo.ts:131
 	// return this.localMinter.value;
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
 	app_global_get
@@ -92,7 +92,7 @@ _sendDepositForBurnMessage:
 	proto 4 1
 
 	// if0_condition
-	// src/TokenMessenger.algo.ts:168
+	// src/TokenMessenger.algo.ts:151
 	// _destinationCaller === bzero(32) as bytes32
 	frame_dig -3 // _destinationCaller: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -105,7 +105,7 @@ _sendDepositForBurnMessage:
 	bz if0_else
 
 	// if0_consequent
-	// src/TokenMessenger.algo.ts:169
+	// src/TokenMessenger.algo.ts:152
 	// return sendMethodCall<[uint<32>, bytes32, bytes], uint<64>>({
 	// 				applicationID: this.localMessageTransmitter.value,
 	// 				name: 'sendMessage',
@@ -121,13 +121,13 @@ _sendDepositForBurnMessage:
 	method "sendMessage(uint32,byte[32],byte[])uint64"
 	itxn_field ApplicationArgs
 
-	// src/TokenMessenger.algo.ts:170
+	// src/TokenMessenger.algo.ts:153
 	// applicationID: this.localMessageTransmitter.value
 	byte 0x6c6f63616c4d6573736167655472616e736d6974746572 // "localMessageTransmitter"
 	app_global_get
 	itxn_field ApplicationID
 
-	// src/TokenMessenger.algo.ts:172
+	// src/TokenMessenger.algo.ts:155
 	// methodArgs: [
 	// 					_destinationDomain,
 	// 					_destinationTokenMessenger,
@@ -164,7 +164,7 @@ _sendDepositForBurnMessage:
 	b if0_end
 
 if0_else:
-	// src/TokenMessenger.algo.ts:179
+	// src/TokenMessenger.algo.ts:162
 	// return sendMethodCall<[uint<32>, bytes32, bytes32, bytes], uint<64>>({
 	// 				applicationID: this.localMessageTransmitter.value,
 	// 				name: 'sendMessageWithCaller',
@@ -181,13 +181,13 @@ if0_else:
 	method "sendMessageWithCaller(uint32,byte[32],byte[32],byte[])uint64"
 	itxn_field ApplicationArgs
 
-	// src/TokenMessenger.algo.ts:180
+	// src/TokenMessenger.algo.ts:163
 	// applicationID: this.localMessageTransmitter.value
 	byte 0x6c6f63616c4d6573736167655472616e736d6974746572 // "localMessageTransmitter"
 	app_global_get
 	itxn_field ApplicationID
 
-	// src/TokenMessenger.algo.ts:182
+	// src/TokenMessenger.algo.ts:165
 	// methodArgs: [
 	// 					_destinationDomain,
 	// 					_destinationTokenMessenger,
@@ -239,14 +239,14 @@ _getRemoteTokenMessenger:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/TokenMessenger.algo.ts:200
+	// src/TokenMessenger.algo.ts:183
 	// _tokenMessenger = this.remoteTokenMessengers(_domain).value
 	frame_dig -1 // _domain: uint<32>
 	itob
 	extract 4 4
 	frame_bury 0 // storage key//_tokenMessenger
 
-	// src/TokenMessenger.algo.ts:202
+	// src/TokenMessenger.algo.ts:185
 	// assert(_tokenMessenger !== bzero(32) as bytes32)
 	frame_dig 0 // storage key//_tokenMessenger
 	box_get
@@ -260,7 +260,7 @@ _getRemoteTokenMessenger:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:204
+	// src/TokenMessenger.algo.ts:187
 	// return _tokenMessenger;
 	frame_dig 0 // storage key//_tokenMessenger
 	box_get
@@ -287,13 +287,13 @@ _depositForBurn:
 	byte 0x
 	dupn 4
 
-	// src/TokenMessenger.algo.ts:224
+	// src/TokenMessenger.algo.ts:207
 	// assert(_axfer.assetAmount)
 	frame_dig -1 // _axfer: AssetTransferTxn
 	gtxns AssetAmount
 	assert
 
-	// src/TokenMessenger.algo.ts:225
+	// src/TokenMessenger.algo.ts:208
 	// assert(_mintRecipient != bzero(32) as bytes32)
 	frame_dig -3 // _mintRecipient: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -305,7 +305,7 @@ _depositForBurn:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:227
+	// src/TokenMessenger.algo.ts:210
 	// _destinationTokenMessenger: bytes32 = this._getRemoteTokenMessenger(
 	// 			_destinationDomain
 	// 		)
@@ -313,12 +313,12 @@ _depositForBurn:
 	callsub _getRemoteTokenMessenger
 	frame_bury 0 // _destinationTokenMessenger: bytes32
 
-	// src/TokenMessenger.algo.ts:231
+	// src/TokenMessenger.algo.ts:214
 	// _localMinter: Application = this._getLocalMinter()
 	callsub _getLocalMinter
 	frame_bury 1 // _localMinter: Application
 
-	// src/TokenMessenger.algo.ts:234
+	// src/TokenMessenger.algo.ts:217
 	// assert(_axfer.xferAsset === _burnToken)
 	frame_dig -1 // _axfer: AssetTransferTxn
 	gtxns XferAsset
@@ -326,7 +326,7 @@ _depositForBurn:
 	==
 	assert
 
-	// src/TokenMessenger.algo.ts:235
+	// src/TokenMessenger.algo.ts:218
 	// assert(_axfer.assetCloseTo !== _localMinter.address)
 	frame_dig -1 // _axfer: AssetTransferTxn
 	gtxns AssetCloseTo
@@ -336,7 +336,7 @@ _depositForBurn:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:236
+	// src/TokenMessenger.algo.ts:219
 	// assert(_axfer.assetReceiver === _localMinter.address)
 	frame_dig -1 // _axfer: AssetTransferTxn
 	gtxns AssetReceiver
@@ -346,7 +346,7 @@ _depositForBurn:
 	==
 	assert
 
-	// src/TokenMessenger.algo.ts:239
+	// src/TokenMessenger.algo.ts:222
 	// sendMethodCall<[Asset, uint<64>], void>({
 	// 			applicationID: _localMinter,
 	// 			name: 'burn',
@@ -361,12 +361,12 @@ _depositForBurn:
 	method "burn(asset,uint64)void"
 	itxn_field ApplicationArgs
 
-	// src/TokenMessenger.algo.ts:240
+	// src/TokenMessenger.algo.ts:223
 	// applicationID: _localMinter
 	frame_dig 1 // _localMinter: Application
 	itxn_field ApplicationID
 
-	// src/TokenMessenger.algo.ts:242
+	// src/TokenMessenger.algo.ts:225
 	// methodArgs: [
 	// 				_burnToken,
 	// 				_axfer.assetAmount
@@ -387,7 +387,7 @@ _depositForBurn:
 	// Submit inner transaction
 	itxn_submit
 
-	// src/TokenMessenger.algo.ts:249
+	// src/TokenMessenger.algo.ts:232
 	// _burnMessage: BurnMessage = {
 	// 			_version: this.messageBodyVersion.value as uint<32>,
 	// 			_burnToken: concat(bzero(32 - len(itob(_burnToken))), itob(_burnToken)) as bytes32,
@@ -450,7 +450,7 @@ _depositForBurn:
 	concat
 	frame_bury 2 // _burnMessage: BurnMessage
 
-	// src/TokenMessenger.algo.ts:257
+	// src/TokenMessenger.algo.ts:240
 	// _nonceReserved: uint<64> = this._sendDepositForBurnMessage(
 	// 			_destinationDomain,
 	// 			_destinationTokenMessenger,
@@ -464,7 +464,7 @@ _depositForBurn:
 	callsub _sendDepositForBurnMessage
 	frame_bury 3 // _nonceReserved: uint<64>
 
-	// src/TokenMessenger.algo.ts:264
+	// src/TokenMessenger.algo.ts:247
 	// this.DepositForBurn.log({
 	// 			nonce: _nonceReserved,
 	// 			burnToken: _burnToken,
@@ -514,7 +514,7 @@ _depositForBurn:
 	concat
 	log
 
-	// src/TokenMessenger.algo.ts:275
+	// src/TokenMessenger.algo.ts:258
 	// return _nonceReserved;
 	frame_dig 3 // _nonceReserved: uint<64>
 
@@ -539,7 +539,7 @@ _mintAndWithdraw:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/TokenMessenger.algo.ts:293
+	// src/TokenMessenger.algo.ts:276
 	// _mintToken = sendMethodCall<[uint<32>, bytes32, Address, uint<64>], Asset>({
 	// 			applicationID: _tokenMinter,
 	// 			name: 'mint',
@@ -556,12 +556,12 @@ _mintAndWithdraw:
 	method "mint(uint32,byte[32],address,uint64)uint64"
 	itxn_field ApplicationArgs
 
-	// src/TokenMessenger.algo.ts:294
+	// src/TokenMessenger.algo.ts:277
 	// applicationID: _tokenMinter
 	frame_dig -1 // _tokenMinter: Application
 	itxn_field ApplicationID
 
-	// src/TokenMessenger.algo.ts:296
+	// src/TokenMessenger.algo.ts:279
 	// methodArgs: [
 	// 				_remoteDomain,
 	// 				_burnToken,
@@ -594,7 +594,7 @@ _mintAndWithdraw:
 	btoi
 	frame_bury 0 // _mintToken: asset
 
-	// src/TokenMessenger.algo.ts:304
+	// src/TokenMessenger.algo.ts:287
 	// this.MintAndWithdraw.log({
 	// 			mintRecipient: _mintRecipient,
 	// 			amount: <uint<256>>_amount,
@@ -689,7 +689,7 @@ abi_route_depositForBurn:
 depositForBurn:
 	proto 4 1
 
-	// src/TokenMessenger.algo.ts:335
+	// src/TokenMessenger.algo.ts:318
 	// return this._depositForBurn(
 	// 			axfer,
 	// 			destinationDomain,
@@ -784,7 +784,7 @@ abi_route_depositForBurnWithCaller:
 depositForBurnWithCaller:
 	proto 5 1
 
-	// src/TokenMessenger.algo.ts:376
+	// src/TokenMessenger.algo.ts:359
 	// assert(destinationCaller !== bzero(32) as bytes32)
 	frame_dig -5 // destinationCaller: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -796,7 +796,7 @@ depositForBurnWithCaller:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:378
+	// src/TokenMessenger.algo.ts:361
 	// return this._depositForBurn(
 	// 			axfer,
 	// 			destinationDomain,
@@ -870,18 +870,18 @@ replaceDepositForBurn:
 	byte 0x
 	dupn 6
 
-	// src/TokenMessenger.algo.ts:414
+	// src/TokenMessenger.algo.ts:397
 	// msgLength = originalMessage.length
 	frame_dig -1 // originalMessage: bytes
 	len
 	frame_bury 0 // msgLength: uint64
 
-	// src/TokenMessenger.algo.ts:415
+	// src/TokenMessenger.algo.ts:398
 	// _originalMsg = castBytes<Message>(originalMessage)
 	frame_dig -1 // originalMessage: bytes
 	frame_bury 1 // _originalMsg: (uint32,uint32,uint32,uint64,byte[32],byte[32],byte[32])
 
-	// src/TokenMessenger.algo.ts:416
+	// src/TokenMessenger.algo.ts:399
 	// _originalMsgBody = castBytes<BurnMessage>(substring3(originalMessage, 116, msgLength))
 	frame_dig -1 // originalMessage: bytes
 	int 116
@@ -889,7 +889,7 @@ replaceDepositForBurn:
 	substring3
 	frame_bury 2 // _originalMsgBody: (uint32,byte[32],byte[32],uint256,byte[32])
 
-	// src/TokenMessenger.algo.ts:420
+	// src/TokenMessenger.algo.ts:403
 	// assert(rawBytes(globals.callerApplicationAddress) as bytes32 === _originalMsgSender)
 	global CallerApplicationAddress
 	byte 0x0000000000000000000000000000000000000000000000000000000000000000
@@ -905,7 +905,7 @@ replaceDepositForBurn:
 	==
 	assert
 
-	// src/TokenMessenger.algo.ts:421
+	// src/TokenMessenger.algo.ts:404
 	// assert(newMintRecipient !== bzero(32) as bytes32)
 	frame_dig -4 // newMintRecipient: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -917,20 +917,20 @@ replaceDepositForBurn:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:423
+	// src/TokenMessenger.algo.ts:406
 	// _burnToken = Asset.fromID(btoi(_originalMsgBody._burnToken))
 	frame_dig 2 // _originalMsgBody: (uint32,byte[32],byte[32],uint256,byte[32])
 	extract 4 32
 	btoi
 	frame_bury 3 // _burnToken: asset
 
-	// src/TokenMessenger.algo.ts:424
+	// src/TokenMessenger.algo.ts:407
 	// _amount = _originalMsgBody._amount
 	frame_dig 2 // _originalMsgBody: (uint32,byte[32],byte[32],uint256,byte[32])
 	extract 68 32
 	frame_bury 4 // _amount: uint256
 
-	// src/TokenMessenger.algo.ts:426
+	// src/TokenMessenger.algo.ts:409
 	// newMessageBody: BurnMessage = {
 	// 			_version: this.messageBodyVersion.value,
 	// 			_burnToken: itob(_burnToken) as bytes32,
@@ -963,7 +963,7 @@ replaceDepositForBurn:
 	concat
 	frame_bury 5 // newMessageBody: BurnMessage
 
-	// src/TokenMessenger.algo.ts:434
+	// src/TokenMessenger.algo.ts:417
 	// sendMethodCall<[bytes, bytes, bytes, bytes32], void>({
 	// 			applicationID: this.localMessageTransmitter.value,
 	// 			name: 'replaceMessage',
@@ -980,13 +980,13 @@ replaceDepositForBurn:
 	method "replaceMessage(byte[],byte[],byte[],byte[32])void"
 	itxn_field ApplicationArgs
 
-	// src/TokenMessenger.algo.ts:435
+	// src/TokenMessenger.algo.ts:418
 	// applicationID: this.localMessageTransmitter.value
 	byte 0x6c6f63616c4d6573736167655472616e736d6974746572 // "localMessageTransmitter"
 	app_global_get
 	itxn_field ApplicationID
 
-	// src/TokenMessenger.algo.ts:437
+	// src/TokenMessenger.algo.ts:420
 	// methodArgs: [
 	// 				rawBytes(originalMessage),
 	// 				originalAttestation,
@@ -1033,7 +1033,7 @@ replaceDepositForBurn:
 	// Submit inner transaction
 	itxn_submit
 
-	// src/TokenMessenger.algo.ts:445
+	// src/TokenMessenger.algo.ts:428
 	// this.DepositForBurn.log({
 	// 			nonce: _originalMsg._msgNonce,
 	// 			burnToken: _burnToken,
@@ -1126,22 +1126,22 @@ handleReceiveMessage:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/TokenMessenger.algo.ts:473
+	// src/TokenMessenger.algo.ts:456
 	// this.onlyLocalMessageTransmitter()
 	callsub onlyLocalMessageTransmitter
 
-	// src/TokenMessenger.algo.ts:474
+	// src/TokenMessenger.algo.ts:457
 	// this.onlyRemoteTokenMessenger(remoteDomain, sender)
 	frame_dig -2 // sender: bytes32
 	frame_dig -1 // remoteDomain: uint<32>
 	callsub onlyRemoteTokenMessenger
 
-	// src/TokenMessenger.algo.ts:481
+	// src/TokenMessenger.algo.ts:464
 	// _messageBody = castBytes<BurnMessage>(messageBody)
 	frame_dig -3 // messageBody: bytes
 	frame_bury 0 // _messageBody: (uint32,byte[32],byte[32],uint256,byte[32])
 
-	// src/TokenMessenger.algo.ts:483
+	// src/TokenMessenger.algo.ts:466
 	// assert(_messageBody._version === this.messageBodyVersion.value)
 	frame_dig 0 // _messageBody: (uint32,byte[32],byte[32],uint256,byte[32])
 	extract 0 4
@@ -1152,7 +1152,7 @@ handleReceiveMessage:
 	==
 	assert
 
-	// src/TokenMessenger.algo.ts:487
+	// src/TokenMessenger.algo.ts:470
 	// this._mintAndWithdraw(
 	// 			this._getLocalMinter(),
 	// 			remoteDomain,
@@ -1172,7 +1172,7 @@ handleReceiveMessage:
 	callsub _getLocalMinter
 	callsub _mintAndWithdraw
 
-	// src/TokenMessenger.algo.ts:495
+	// src/TokenMessenger.algo.ts:478
 	// return true;
 	int 1
 
@@ -1212,7 +1212,7 @@ abi_route_addRemoteTokenMessenger:
 addRemoteTokenMessenger:
 	proto 2 0
 
-	// src/TokenMessenger.algo.ts:510
+	// src/TokenMessenger.algo.ts:493
 	// assert(tokenMessenger !== bzero(32) as bytes32)
 	frame_dig -2 // tokenMessenger: bytes32
 	byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1224,7 +1224,7 @@ addRemoteTokenMessenger:
 	!=
 	assert
 
-	// src/TokenMessenger.algo.ts:511
+	// src/TokenMessenger.algo.ts:494
 	// assert(!this.remoteTokenMessengers(domain).exists)
 	frame_dig -1 // domain: uint<32>
 	itob
@@ -1235,7 +1235,7 @@ addRemoteTokenMessenger:
 	!
 	assert
 
-	// src/TokenMessenger.algo.ts:513
+	// src/TokenMessenger.algo.ts:496
 	// this.remoteTokenMessengers(domain).value = tokenMessenger
 	frame_dig -1 // domain: uint<32>
 	itob
@@ -1243,7 +1243,7 @@ addRemoteTokenMessenger:
 	frame_dig -2 // tokenMessenger: bytes32
 	box_put
 
-	// src/TokenMessenger.algo.ts:515
+	// src/TokenMessenger.algo.ts:498
 	// this.RemoteTokenMessengerAdded.log({
 	// 			domain: domain,
 	// 			tokenMessenger: tokenMessenger
@@ -1284,7 +1284,7 @@ removeRemoteTokenMessenger:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/TokenMessenger.algo.ts:532
+	// src/TokenMessenger.algo.ts:515
 	// assert(this.remoteTokenMessengers(domain).exists)
 	frame_dig -1 // domain: uint<32>
 	itob
@@ -1294,21 +1294,21 @@ removeRemoteTokenMessenger:
 	pop
 	assert
 
-	// src/TokenMessenger.algo.ts:534
+	// src/TokenMessenger.algo.ts:517
 	// _removedTokenMessenger = this.remoteTokenMessengers(domain).value
 	frame_dig -1 // domain: uint<32>
 	itob
 	extract 4 4
 	frame_bury 0 // storage key//_removedTokenMessenger
 
-	// src/TokenMessenger.algo.ts:535
+	// src/TokenMessenger.algo.ts:518
 	// this.remoteTokenMessengers(domain).delete()
 	frame_dig -1 // domain: uint<32>
 	itob
 	extract 4 4
 	box_del
 
-	// src/TokenMessenger.algo.ts:537
+	// src/TokenMessenger.algo.ts:520
 	// this.RemoteTokenMessengerRemoved.log({
 	// 			domain: domain,
 	// 			tokenMessenger: _removedTokenMessenger
@@ -1344,12 +1344,12 @@ abi_route_addLocalMinter:
 addLocalMinter:
 	proto 1 0
 
-	// src/TokenMessenger.algo.ts:553
+	// src/TokenMessenger.algo.ts:536
 	// assert(newLocalMinter)
 	frame_dig -1 // newLocalMinter: Application
 	assert
 
-	// src/TokenMessenger.algo.ts:554
+	// src/TokenMessenger.algo.ts:537
 	// assert(!this.localMinter.exists)
 	txna Applications 0
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
@@ -1359,13 +1359,13 @@ addLocalMinter:
 	!
 	assert
 
-	// src/TokenMessenger.algo.ts:556
+	// src/TokenMessenger.algo.ts:539
 	// this.localMinter.value = newLocalMinter
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
 	frame_dig -1 // newLocalMinter: Application
 	app_global_put
 
-	// src/TokenMessenger.algo.ts:558
+	// src/TokenMessenger.algo.ts:541
 	// this.LocalMinterAdded.log({
 	// 			localMinter: newLocalMinter
 	// 		})
@@ -1392,13 +1392,13 @@ removeLocalMinter:
 	// Push empty bytes after the frame pointer to reserve space for local variables
 	byte 0x
 
-	// src/TokenMessenger.algo.ts:570
+	// src/TokenMessenger.algo.ts:553
 	// _localMinterAddress: Application = this.localMinter.value
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
 	app_global_get
 	frame_bury 0 // _localMinterAddress: Application
 
-	// src/TokenMessenger.algo.ts:571
+	// src/TokenMessenger.algo.ts:554
 	// assert(this.localMinter.exists)
 	txna Applications 0
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
@@ -1407,12 +1407,12 @@ removeLocalMinter:
 	pop
 	assert
 
-	// src/TokenMessenger.algo.ts:573
+	// src/TokenMessenger.algo.ts:556
 	// this.localMinter.delete()
 	byte 0x6c6f63616c4d696e746572 // "localMinter"
 	app_global_del
 
-	// src/TokenMessenger.algo.ts:575
+	// src/TokenMessenger.algo.ts:558
 	// this.LocalMinterRemoved.log({
 	// 			localMinter: _localMinterAddress
 	// 		})
@@ -1450,18 +1450,18 @@ abi_route_deploy:
 deploy:
 	proto 2 0
 
-	// src/TokenMessenger.algo.ts:591
+	// src/TokenMessenger.algo.ts:574
 	// assert(_messageTransmitter)
 	frame_dig -1 // _messageTransmitter: Application
 	assert
 
-	// src/TokenMessenger.algo.ts:593
+	// src/TokenMessenger.algo.ts:576
 	// this.localMessageTransmitter.value = _messageTransmitter
 	byte 0x6c6f63616c4d6573736167655472616e736d6974746572 // "localMessageTransmitter"
 	frame_dig -1 // _messageTransmitter: Application
 	app_global_put
 
-	// src/TokenMessenger.algo.ts:594
+	// src/TokenMessenger.algo.ts:577
 	// this.messageBodyVersion.value = _messageBodyVersion
 	byte 0x6d657373616765426f647956657273696f6e // "messageBodyVersion"
 	frame_dig -2 // _messageBodyVersion: uint<32>

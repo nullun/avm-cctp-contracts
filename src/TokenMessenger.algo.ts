@@ -1,23 +1,6 @@
 import { Contract } from '@algorandfoundation/tealscript';
-
-type Message = {
-	_msgVersion: uint<32>,
-	_msgSourceDomain: uint<32>,
-	_msgDestinationDomain: uint<32>,
-	_msgNonce: uint<64>,
-	_msgSender: bytes32,
-	_msgRecipient: bytes32,
-	_msgDestinationCaller: bytes32,
-	//_msgRawBody: BurnMessage
-};
-
-type BurnMessage = {
-	_version: uint<32>,
-	_burnToken: bytes32,
-	_mintRecipient: bytes32,
-	_amount: uint<256>,
-	_messageSender: bytes32
-};
+import type { Message } from './messages/Message.algo';
+import type { BurnMessage } from './messages/BurnMessage.algo';
 
 class TokenMessenger extends Contract {
 
