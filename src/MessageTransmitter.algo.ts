@@ -1,5 +1,6 @@
 import { Contract } from '@algorandfoundation/tealscript';
 import type { Message } from './messages/Message.algo';
+import { Pausable } from './roles/Pausable.algo';
 import { Attestable } from './roles/Attestable.algo';
 
 type SourceDomainNonceBox = {
@@ -7,14 +8,30 @@ type SourceDomainNonceBox = {
 	nonce: uint<64>;
 };
 
-class MessageTransmitter extends Contract.extend(Attestable) {
+class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 	programVersion = 10;
 
+	// ============ State Variables ============
+	// ===== MessageTransmitter =====
+	// Domain of chain on which the application is deployed
+	localDomain = GlobalStateKey<uint<32>>();
+
+	// Message Format version
+	version = GlobalStateKey<uint<32>>();
+
+	// Maximum size of message body, in bytes.
+	// This value is set by owner.
+	maxMessageBodySize = GlobalStateKey<uint<64>>();
+
+	// Next available nonce from this source domain
+	nextAvailableNonce = GlobalStateKey<uint<64>>();
+
+	// Stores 262,144 nonce flags per box (0 if unused, 1 if used)
+	// nonce / 262144 = box number. nonce / 8 = offset. nonce % 8 = flag position.
+	usedNonces = BoxMap<SourceDomainNonceBox, byte>({ allowPotentialCollisions: true });
+
+
 	// ============ Events ============
-	// ===== Ownable =====
-
-	// ===== Attestable =====
-
 	// ===== MessageTransmitter =====
 	/**
 	 * @notice Emitted when a new message is dispatched
@@ -53,36 +70,7 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 	}>();
 
 
-	// ============ State Variables ============
-	// ===== Ownable =====
-
-	// ===== Attestable =====
-
-	// ===== MessageTransmitter =====
-	// Domain of chain on which the application is deployed
-	localDomain = GlobalStateKey<uint<32>>();
-
-	// Message Format version
-	version = GlobalStateKey<uint<32>>();
-
-	// Maximum size of message body, in bytes.
-	// This value is set by owner.
-	maxMessageBodySize = GlobalStateKey<uint<64>>();
-
-	// Next available nonce from this source domain
-	nextAvailableNonce = GlobalStateKey<uint<64>>();
-
-	// Stores 262,144 nonce flags per box (0 if unused, 1 if used)
-	// nonce / 262144 = box number. nonce / 8 = offset. nonce % 8 = flag position.
-	usedNonces = BoxMap<SourceDomainNonceBox, byte>({ allowPotentialCollisions: true });
-
-
 	// ============ Internal Utils ============
-	// ===== Ownable =====
-
-	// ===== Attestable =====
-
-
 	// ===== MessageTransmitter =====
 	/**
 	 * Reserve and increment next available nonce
@@ -157,10 +145,6 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 
 
 	// ============ External Functions  ============
-	// ===== Ownable =====
-
-	// ===== Attestable =====
-
 	// ===== MessageTransmitter =====
 	/**
 	 * @notice Send the message to the destination domain and recipient
@@ -175,7 +159,8 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 		recipient: bytes32,
 		messageBody: bytes
 	): uint<64> {
-		// TODO: WhenNotPaused
+		this.whenNotPaused();
+
 		const _nonce = this._reserveAndIncrementNonce();
 		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
 
@@ -209,8 +194,8 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 		newMessageBody: bytes,
 		newDestinationCaller: bytes32
 	): void {
-		// TODO: WhenNotPaused
-		// TODO: Validate each signature in the attestation
+		this.whenNotPaused();
+
 		this._verifyAttestationSignatures(originalMessage, originalAttestation);
 
 		const message_start = extract_uint16(originalMessage, 0);
@@ -262,7 +247,8 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 		destinationCaller: bytes32,
 		messageBody: bytes
 	): uint<64> {
-		// TODO: WhenNotPaused
+		this.whenNotPaused();
+
 		assert(destinationCaller != bzero(32) as bytes32);
 
 		const _nonce = this._reserveAndIncrementNonce();
@@ -315,8 +301,8 @@ class MessageTransmitter extends Contract.extend(Attestable) {
 		message: bytes,
 		attestation: bytes
 	): boolean {
-		// TODO: WhenNotPaused
-		// TODO: Validate each signature in the attestation
+		this.whenNotPaused();
+
 		this._verifyAttestationSignatures(message, attestation);
 
 		verifyPayTxn(fee, {

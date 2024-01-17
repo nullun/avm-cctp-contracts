@@ -1,5 +1,5 @@
 import { Contract } from '@algorandfoundation/tealscript';
-import { Ownable } from './Ownable.algo';
+import { Ownable2Step } from './Ownable2Step.algo';
 
 type Signature = {
 	r: bytes32;
@@ -10,8 +10,19 @@ type Signature = {
 // 65-byte ECDSA signature: v (1) + r (32) + s (32)
 const signatureLength = 65;
 
-export class Attestable extends Contract.extend(Ownable) {
+export class Attestable extends Contract.extend(Ownable2Step) {
 	programVersion = 10;
+
+	// ============ State Variables ============
+	// number of signatures from distinct attesters required for a message to be received (m in m/n multisig)
+	signatureThreshold = GlobalStateKey<uint<64>>();
+
+	// Attester Manager of the application
+	attesterManager = GlobalStateKey<Address>();
+
+	// Attester Role
+	enabledAttesters = BoxKey<bytes32[]>();
+
 
 	// ============ Events ============
 	/**
@@ -39,17 +50,6 @@ export class Attestable extends Contract.extend(Ownable) {
 		/* newSignatureThreshold */
 		newSignatureThreshold: uint<64>
 	}>();
-
-
-	// ============ State Variables ============
-	// number of signatures from distinct attesters required for a message to be received (m in m/n multisig)
-	signatureThreshold = GlobalStateKey<uint<64>>();
-
-	// Attester Manager of the application
-	attesterManager = GlobalStateKey<Address>();
-
-	// Attester Role
-	enabledAttesters = BoxKey<bytes32[]>();
 
 
 	// ============ Access Checks ============
@@ -204,7 +204,7 @@ export class Attestable extends Contract.extend(Ownable) {
 	 * @dev Sets a new attester manager address
 	 * @param _newAttesterManager attester manager address to set
 	 */
-	private _setAttesterManager(_newAttesterManager: Address): void {
+	protected _setAttesterManager(_newAttesterManager: Address): void {
 		this.attesterManager.value = _newAttesterManager;
 	}
 

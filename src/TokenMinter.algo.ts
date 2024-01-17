@@ -1,6 +1,26 @@
 import { Contract } from '@algorandfoundation/tealscript';
+import { Pausable } from './roles/Pausable.algo';
 
-class TokenMinter extends Contract {
+class TokenMinter extends Contract.extend(Pausable) {
+	programVersion = 10;
+
+	// ============ State Variables ============
+	// ===== TokenController =====
+	// Supported burnable tokens on the local domain
+	// local token (address) => maximum burn amounts per message
+	burnLimitsPerMessage = BoxMap<Asset, uint<64>>();
+
+	// Supported mintable tokens on remote domains, mapped to their corresponding local token
+	// hash(remote domain & remote token bytes32 address) => local token (asset)
+	remoteTokensToLocalTokens = BoxMap<bytes32, Asset>();
+
+	// Role with permission to manage token address mapping across domains, and per-message burn limits
+	_tokenController = GlobalStateKey<Address>();
+
+	// ===== TokenMinter =====
+	// Local TokenMessenger with permission to call mint and burn on this TokenMinter
+	localTokenMessenger = GlobalStateKey<Application>();
+
 
 	// ============ Events ============
 	// ===== TokenController =====
@@ -70,24 +90,6 @@ class TokenMinter extends Contract {
 	LocalTokenMessengerRemoved = new EventLogger<{
 		localTokenMessenger: Application
 	}>();
-
-
-	// ============ State Variables ============
-	// ===== TokenController =====
-	// Supported burnable tokens on the local domain
-	// local token (address) => maximum burn amounts per message
-	burnLimitsPerMessage = BoxMap<Asset, uint<64>>();
-
-	// Supported mintable tokens on remote domains, mapped to their corresponding local token
-	// hash(remote domain & remote token bytes32 address) => local token (asset)
-	remoteTokensToLocalTokens = BoxMap<bytes32, Asset>();
-
-	// Role with permission to manage token address mapping across domains, and per-message burn limits
-	_tokenController = GlobalStateKey<Address>();
-
-	// ===== TokenMinter =====
-	// Local TokenMessenger with permission to call mint and burn on this TokenMinter
-	localTokenMessenger = GlobalStateKey<Application>();
 
 
 	// ============ Access Checks ============
@@ -297,7 +299,7 @@ class TokenMinter extends Contract {
 		to: Address,
 		amount: uint<64>
 	): Asset {
-		// TODO: WhenNotPaused
+		this.whenNotPaused();
 		this.onlyLocalTokenMessenger();
 
 		const _mintToken: Asset = this._getLocalToken(sourceDomain, burnToken);
@@ -323,7 +325,7 @@ class TokenMinter extends Contract {
 		burnToken: Asset,
 		burnAmount: uint<64>
 	): void {
-		// TODO: WhenNotPaused
+		this.whenNotPaused();
 		this.onlyLocalTokenMessenger();
 		this.onlyWithinBurnLimit(burnToken, burnAmount);
 

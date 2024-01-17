@@ -3,6 +3,21 @@ import type { Message } from './messages/Message.algo';
 import type { BurnMessage } from './messages/BurnMessage.algo';
 
 class TokenMessenger extends Contract {
+	programVersion = 10;
+
+	// ============ State Variables ============
+	// Local Message Transmitter responsible for sending and receiving messages to/from remote domains
+	localMessageTransmitter = GlobalStateKey<Application>();
+
+	// Version of message body format
+	messageBodyVersion = GlobalStateKey<uint<32>>();
+
+	// Minter responsible for minting and burning tokens on the local domain
+	localMinter = GlobalStateKey<Application>();
+
+	// Valid TokenMessengers on remote domains
+	remoteTokenMessengers = BoxMap<uint<32>, bytes32>();
+
 
 	// ============ Events ============
 	/**
@@ -83,20 +98,6 @@ class TokenMessenger extends Contract {
 	LocalMinterRemoved = new EventLogger<{
 		localMinter: Application
 	}>();
-
-
-	// ============ State Variables ============
-	// Local Message Transmitter responsible for sending and receiving messages to/from remote domains
-	localMessageTransmitter = GlobalStateKey<Application>();
-
-	// Version of message body format
-	messageBodyVersion = GlobalStateKey<uint<32>>();
-
-	// Minter responsible for minting and burning tokens on the local domain
-	localMinter = GlobalStateKey<Application>();
-
-	// Valid TokenMessengers on remote domains
-	remoteTokenMessengers = BoxMap<uint<32>, bytes32>();
 
 
 	// ============ Modifiers ============
