@@ -19,14 +19,6 @@ export class Ownable extends Contract {
 
 
     // ============ Constructor ============
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    /*
-    protected _constructor(): void {
-        this._transferOwnership(this.txn.sender);
-    }
-    */
 
 
 	// ============ Access Checks ============

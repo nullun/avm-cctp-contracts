@@ -12,7 +12,6 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 	programVersion = 10;
 
 	// ============ State Variables ============
-	// ===== MessageTransmitter =====
 	// Domain of chain on which the application is deployed
 	localDomain = GlobalStateKey<uint<32>>();
 
@@ -32,7 +31,6 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 
 
 	// ============ Events ============
-	// ===== MessageTransmitter =====
 	/**
 	 * @notice Emitted when a new message is dispatched
 	 * @param message Raw bytes of message
@@ -71,7 +69,6 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 
 
 	// ============ Internal Utils ============
-	// ===== MessageTransmitter =====
 	/**
 	 * Reserve and increment next available nonce
 	 * @return nonce reserved
@@ -145,7 +142,6 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 
 
 	// ============ External Functions  ============
-	// ===== MessageTransmitter =====
 	/**
 	 * @notice Send the message to the destination domain and recipient
 	 * @dev Increment nonce, format the message, and emit `MessageSent` event with message information.
@@ -162,7 +158,7 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 		this.whenNotPaused();
 
 		const _nonce = this._reserveAndIncrementNonce();
-		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
+		const _messageSender = (bzero(24) + itob(globals.callerApplicationID)) as bytes32;
 
 		this._sendMessage(
 			destinationDomain,
@@ -252,7 +248,7 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 		assert(destinationCaller != bzero(32) as bytes32);
 
 		const _nonce = this._reserveAndIncrementNonce();
-		const _messageSender = bzero(24) + itob(globals.callerApplicationID);
+		const _messageSender = (bzero(24) + itob(globals.callerApplicationID)) as bytes32;
 
 		this._sendMessage(
 			destinationDomain,

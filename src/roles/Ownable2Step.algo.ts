@@ -33,8 +33,9 @@ export class Ownable2Step extends Contract.extend(Ownable) {
 	/**
      * @dev Starts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one.
      * Can only be called by the current owner.
+     * FIX: Once overrides exist, rename to transferOwnership
 	 */
-	transferOwnership(newOwner: Address): void {
+	transferOwnership2S(newOwner: Address): void {
 		this.onlyOwner();
 
         this._pendingOwner.value = newOwner;

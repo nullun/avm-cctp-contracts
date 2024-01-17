@@ -62,18 +62,6 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 
 
     // ============ Constructor ============
-    /**
-     * @dev The constructor sets the original attester manager of the contract to the sender account.
-     * @param attester attester to initialize
-     */
-    /*
-    protected _constructor(attester: bytes32): void {
-        this._setAttesterManager(this.txn.sender);
-        // Initially 1 signature is required. Threshold can be increased by attesterManager.
-        this.signatureThreshold.value = 1;
-        this.enableAttester(attester);
-    }
-    */
 
 
     // ============ Public/External Functions ============

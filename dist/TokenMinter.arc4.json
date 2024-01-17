@@ -3,6 +3,15 @@
   "desc": "",
   "methods": [
     {
+      "name": "tokenController",
+      "desc": "@devReturns the address of the tokenController@returnaddress of the tokenController",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
       "name": "linkTokenPair",
       "desc": "@noticeLinks a pair of local and remote tokens to be supported by this TokenMinter.@devAssociates a (`remoteToken`,`localToken`) pair by updating remoteTokensToLocalTokens mapping.Reverts if the remote token (for the given`remoteDomain`) already maps to a nonzero local token.Note:- A remote token (on a certain remote domain) can only map to one local token, but many remote tokenscan map to the same local token.- Setting a token pair does not enable the`localToken`(that requires calling setLocalTokenEnabledStatus.)",
       "args": [
@@ -118,6 +127,159 @@
           "desc": ""
         }
       ]
+    },
+    {
+      "name": "owner",
+      "desc": "@devReturns the address of the current owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
+      "name": "_checkOwner",
+      "desc": "@devThrows if the sender is not the owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "transferOwnership",
+      "desc": "@devTransfers ownership of the application to a new account (`newOwner`).Can only be called by the current owner.",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "pendingOwner",
+      "desc": "@devReturns the address of the pending owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
+      "name": "transferOwnership2S",
+      "desc": "@devStarts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one.Can only be called by the current owner.FIX: Once overrides exist, rename to transferOwnership",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "OwnershipTransferStarted",
+          "args": [
+            {
+              "name": "previousAddress",
+              "type": "address"
+            },
+            {
+              "name": "newAddress",
+              "type": "address"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "acceptOwnership",
+      "desc": "@devThe new owner accepts the ownership transfer.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "pauser",
+      "desc": "@noticeReturns current pauser@returnPauser's address",
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
+      "name": "pause",
+      "desc": "@devcalled by the owner to pause, triggers stopped state",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "Pause",
+          "args": [],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "unpause",
+      "desc": "@devcalled by the owner to unpause, returns to normal state",
+      "args": [],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "Unpause",
+          "args": [],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "updatePauser",
+      "desc": "@devupdate the pauser role",
+      "args": [
+        {
+          "name": "_newPauser",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "PauserChanged",
+          "args": [
+            {
+              "name": "newAddress",
+              "type": "address"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "args": [
+        {
+          "name": "_tokenController",
+          "type": "address",
+          "desc": "Token controller address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
     },
     {
       "name": "mint",
@@ -245,19 +407,6 @@
       "returns": {
         "type": "uint64"
       }
-    },
-    {
-      "name": "deploy",
-      "args": [
-        {
-          "name": "_tokenController",
-          "type": "address",
-          "desc": "Token controller address"
-        }
-      ],
-      "returns": {
-        "type": "void"
-      }
     }
   ],
   "events": [
@@ -316,6 +465,54 @@
       "args": [
         {
           "name": "tokenController",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "OwnershipTransferred",
+      "args": [
+        {
+          "name": "oldAddress",
+          "type": "address"
+        },
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "OwnershipTransferStarted",
+      "args": [
+        {
+          "name": "previousAddress",
+          "type": "address"
+        },
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "Pause",
+      "args": [],
+      "desc": ""
+    },
+    {
+      "name": "Unpause",
+      "args": [],
+      "desc": ""
+    },
+    {
+      "name": "PauserChanged",
+      "args": [
+        {
+          "name": "newAddress",
           "type": "address"
         }
       ],

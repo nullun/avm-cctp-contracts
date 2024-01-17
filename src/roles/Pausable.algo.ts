@@ -1,6 +1,7 @@
-import { Contract } from "@algorandfoundation/tealscript";
+import { Contract } from '@algorandfoundation/tealscript';
+import { Ownable2Step } from './Ownable2Step.algo';
 
-export class Pausable extends Contract {
+export class Pausable extends Contract.extend(Ownable2Step) {
 	programVersion = 10;
 
 	// ============ State Variables ============
@@ -27,7 +28,7 @@ export class Pausable extends Contract {
     /**
      * @dev throws if called by any account other than the pauser
      */
-    protected onlyPauser() {
+    protected onlyPauser(): void {
         assert(this.txn.sender === this._pauser.value);
     }
 
