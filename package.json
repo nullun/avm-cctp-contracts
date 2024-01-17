@@ -17,7 +17,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@algorandfoundation/tealscript": "^0.72.1",
+    "@algorandfoundation/tealscript": "^0.73.3",
     "algosdk": "^2.7.0",
     "elliptic": "^6.5.4",
     "js-sha3": "^0.9.3",

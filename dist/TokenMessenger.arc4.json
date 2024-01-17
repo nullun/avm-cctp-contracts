@@ -3,6 +3,83 @@
   "desc": "",
   "methods": [
     {
+      "name": "owner",
+      "desc": "@devReturns the address of the current owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
+      "name": "_checkOwner",
+      "desc": "@devThrows if the sender is not the owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "transferOwnership",
+      "desc": "@devTransfers ownership of the application to a new account (`newOwner`).Can only be called by the current owner.",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
+      "name": "pendingOwner",
+      "desc": "@devReturns the address of the pending owner.",
+      "readonly": true,
+      "args": [],
+      "returns": {
+        "type": "address"
+      }
+    },
+    {
+      "name": "transferOwnership2S",
+      "desc": "@devStarts the ownership transfer of the contract to a new account. Replaces the pending transfer if there is one.Can only be called by the current owner.FIX: Once overrides exist, rename to transferOwnership",
+      "args": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      },
+      "events": [
+        {
+          "name": "OwnershipTransferStarted",
+          "args": [
+            {
+              "name": "previousAddress",
+              "type": "address"
+            },
+            {
+              "name": "newAddress",
+              "type": "address"
+            }
+          ],
+          "desc": ""
+        }
+      ]
+    },
+    {
+      "name": "acceptOwnership",
+      "desc": "@devThe new owner accepts the ownership transfer.",
+      "args": [],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
       "name": "depositForBurn",
       "desc": "@noticeDeposits and burns tokens from sender to be minted on destination domain.Emits a`DepositForBurn`event.@devreverts if:- given burnToken is not supported- given destinationDomain has no TokenMessenger registered- transferFrom() reverts. For example, if sender's burnToken balance or approved allowanceto this contract is less than`amount`.- burn() reverts. For example, if`amount`is 0.- MessageTransmitter returns false or reverts.",
       "args": [
@@ -289,6 +366,34 @@
     }
   ],
   "events": [
+    {
+      "name": "OwnershipTransferred",
+      "args": [
+        {
+          "name": "oldAddress",
+          "type": "address"
+        },
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
+    {
+      "name": "OwnershipTransferStarted",
+      "args": [
+        {
+          "name": "previousAddress",
+          "type": "address"
+        },
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "desc": ""
+    },
     {
       "name": "DepositForBurn",
       "args": [

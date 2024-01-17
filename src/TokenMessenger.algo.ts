@@ -1,8 +1,24 @@
 import { Contract } from '@algorandfoundation/tealscript';
 import type { Message } from './messages/Message.algo';
 import type { BurnMessage } from './messages/BurnMessage.algo';
+import { Ownable2Step } from './roles/Ownable2Step.algo';
 
-class TokenMessenger extends Contract {
+class TokenMessenger extends Contract.extend(Ownable2Step) {
+	programVersion = 10;
+
+	// ============ State Variables ============
+	// Local Message Transmitter responsible for sending and receiving messages to/from remote domains
+	localMessageTransmitter = GlobalStateKey<Application>();
+
+	// Version of message body format
+	messageBodyVersion = GlobalStateKey<uint<32>>();
+
+	// Minter responsible for minting and burning tokens on the local domain
+	localMinter = GlobalStateKey<Application>();
+
+	// Valid TokenMessengers on remote domains
+	remoteTokenMessengers = BoxMap<uint<32>, bytes32>();
+
 
 	// ============ Events ============
 	/**
@@ -83,20 +99,6 @@ class TokenMessenger extends Contract {
 	LocalMinterRemoved = new EventLogger<{
 		localMinter: Application
 	}>();
-
-
-	// ============ State Variables ============
-	// Local Message Transmitter responsible for sending and receiving messages to/from remote domains
-	localMessageTransmitter = GlobalStateKey<Application>();
-
-	// Version of message body format
-	messageBodyVersion = GlobalStateKey<uint<32>>();
-
-	// Minter responsible for minting and burning tokens on the local domain
-	localMinter = GlobalStateKey<Application>();
-
-	// Valid TokenMessengers on remote domains
-	remoteTokenMessengers = BoxMap<uint<32>, bytes32>();
 
 
 	// ============ Modifiers ============
@@ -322,7 +324,7 @@ class TokenMessenger extends Contract {
 			burnToken,
 			// (zeroAddress here indicates that any address can call receiveMessage()
 			// on the destination domain, triggering mint to specified `mintRecipient`)
-			bzero(32)
+			bzero(32) as StaticArray<byte, 32>
 		);
 	}
 
@@ -488,7 +490,7 @@ class TokenMessenger extends Contract {
 		domain: uint<32>,
 		tokenMessenger: bytes32
 	): void {
-		// TODO: this.onlyOwner();
+		this.onlyOwner();
 
 		assert(tokenMessenger !== bzero(32) as bytes32);
 		assert(!this.remoteTokenMessengers(domain).exists);
@@ -509,7 +511,7 @@ class TokenMessenger extends Contract {
 	removeRemoteTokenMessenger(
 		domain: uint<32>
 	): void {
-		// TODO: this.onlyOwner();
+		this.onlyOwner();
 
 		// No TokenMessenger set for given remote domain.
 		assert(this.remoteTokenMessengers(domain).exists);
@@ -531,7 +533,7 @@ class TokenMessenger extends Contract {
 	addLocalMinter(
 		newLocalMinter: Application
 	): void {
-		// TODO: this.onlyOwner();
+		this.onlyOwner();
 
 		assert(newLocalMinter);
 		assert(!this.localMinter.exists);
@@ -548,7 +550,7 @@ class TokenMessenger extends Contract {
 	 * @dev Reverts if the minter of the local domain is not set.
 	 */
 	removeLocalMinter(): void {
-		// TODO: this.onlyOwner();
+		this.onlyOwner();
 
 		const _localMinterAddress: Application = this.localMinter.value;
 		assert(this.localMinter.exists);
@@ -572,6 +574,9 @@ class TokenMessenger extends Contract {
 		_messageBodyVersion: uint<32>
 	): void {
 		assert(_messageTransmitter);
+
+		// Set Ownable
+		this._transferOwnership(this.txn.sender);
 
 		this.localMessageTransmitter.value = _messageTransmitter;
 		this.messageBodyVersion.value = _messageBodyVersion;
