@@ -253,8 +253,28 @@
       ]
     },
     {
+      "name": "deploy",
+      "args": [
+        {
+          "name": "_localDomain",
+          "type": "uint32"
+        },
+        {
+          "name": "_maxMessageBodySize",
+          "type": "uint64"
+        },
+        {
+          "name": "_version",
+          "type": "uint32"
+        }
+      ],
+      "returns": {
+        "type": "void"
+      }
+    },
+    {
       "name": "sendMessage",
-      "desc": "@noticeSend the message to the destination domain and recipient@devIncrement nonce, format the message, and emit`MessageSent`event with message information.",
+      "desc": "Send the message to the destination domain and recipient@devIncrement nonce, format the message, and emit`MessageSent`eventwith message information.",
       "args": [
         {
           "name": "destinationDomain",
@@ -278,7 +298,7 @@
     },
     {
       "name": "replaceMessage",
-      "desc": "@noticeReplace a message with a new message body and/or destination caller.@devThe`originalAttestation`must be a valid attestation of`originalMessage`.Reverts if msg.sender does not match sender of original message, or if the source domain of the original messagedoes not match this MessageTransmitter's local domain.",
+      "desc": "Replace a message with a new message body and/or destination caller.@devThe`originalAttestation`must be a valid attestation of`originalMessage`.Reverts if msg.sender does not match sender of original message, or ifthe source domain of the original message does not match thisMessageTransmitter's local domain.",
       "args": [
         {
           "name": "originalMessage",
@@ -307,7 +327,7 @@
     },
     {
       "name": "sendMessageWithCaller",
-      "desc": "@noticeSend the message to the destination domain and recipient, for a specified`destinationCaller`on thedestination domain.@devIncrement nonce, format the message, and emit`MessageSent`event with message information.WARNING: if the`destinationCaller`does not represent a valid address, then it will not be possibleto broadcast the message on the destination domain. This is an advanced feature, and the standardsendMessage() should be preferred for use cases where a specific destination caller is not required.",
+      "desc": "Send the message to the destination domain and recipient, for aspecified`destinationCaller`on the destination domain.@devIncrement nonce, format the message, and emit`MessageSent`eventwith message information.WARNING: if the`destinationCaller`does not represent a valid address,then it will not be possible to broadcast the message on the destinationdomain. This is an advanced feature, and the standard sendMessage() shouldbe preferred for use cases where a specific destination caller is notrequired.",
       "args": [
         {
           "name": "destinationDomain",
@@ -336,7 +356,7 @@
     },
     {
       "name": "receiveMessage",
-      "desc": "@noticeReceive a message. Messages with a given noncecan only be broadcast once for a (sourceDomain, destinationDomain)pair. The message body of a valid message is passed to thespecified recipient for further processing.@devAttestation format:A valid attestation is the concatenated 65-byte signature(s) of exactly`thresholdSignature`signatures, in increasing order of attester address.***If the attester addresses recovered from signatures are not inincreasing order, signature verification will fail.***If incorrect number of signatures or duplicate signatures are supplied,signature verification will fail.Message format:Field                 Bytes      Type       Indexversion               4          uint32     0sourceDomain          4          uint32     4destinationDomain     4          uint32     8nonce                 8          uint64     12sender                32         bytes32    20recipient             32         bytes32    52destinationCaller     32         bytes32    84messageBody           dynamic    bytes      116",
+      "desc": "Receive a message. Messages with a given noncecan only be broadcast once for a (sourceDomain, destinationDomain)pair. The message body of a valid message is passed to thespecified recipient for further processing.@devAttestation format:A valid attestation is the concatenated 65-byte signature(s) of exactly`thresholdSignature`signatures, in increasing order of attester address.***If the attester addresses recovered from signatures are not inincreasing order, signature verification will fail.***If incorrect number of signatures or duplicate signatures are supplied,signature verification will fail.Message format:Field                 Bytes      Type       Indexversion               4          uint32     0sourceDomain          4          uint32     4destinationDomain     4          uint32     8nonce                 8          uint64     12sender                32         bytes32    20recipient             32         bytes32    52destinationCaller     32         bytes32    84messageBody           dynamic    bytes      116",
       "args": [
         {
           "name": "fee",
@@ -362,32 +382,37 @@
           "args": [
             {
               "name": "caller",
-              "type": "address"
+              "type": "address",
+              "desc": "Caller (this.txn.sender) on destination domain"
             },
             {
               "name": "sourceDomain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "The source domain this message originated from"
             },
             {
               "name": "nonce",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "The nonce unique to this message"
             },
             {
               "name": "sender",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "The sender of this message"
             },
             {
               "name": "messageBody",
-              "type": "byte[]"
+              "type": "byte[]",
+              "desc": "message body bytes"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a new message is received"
         }
       ]
     },
     {
       "name": "setMaxMessageBodySize",
-      "desc": "@noticeSets the max message body size@devThis value should not be reduced without good reason,to avoid impacting users who rely on large messages.",
+      "desc": "Sets the max message body size@devThis value should not be reduced without good reason,to avoid impacting users who rely on large messages.",
       "args": [
         {
           "name": "newMaxMessageBodySize",
@@ -404,32 +429,13 @@
           "args": [
             {
               "name": "newMaxMessageBodySize",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "new maximum message body size, in bytes"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when max message body size is updated"
         }
       ]
-    },
-    {
-      "name": "deploy",
-      "args": [
-        {
-          "name": "_localDomain",
-          "type": "uint32"
-        },
-        {
-          "name": "_maxMessageBodySize",
-          "type": "uint64"
-        },
-        {
-          "name": "_version",
-          "type": "uint32"
-        }
-      ],
-      "returns": {
-        "type": "void"
-      }
     }
   ],
   "events": [
@@ -514,46 +520,53 @@
       "args": [
         {
           "name": "message",
-          "type": "byte[]"
+          "type": "byte[]",
+          "desc": "Raw bytes of message"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a new message is dispatched"
     },
     {
       "name": "MessageReceived",
       "args": [
         {
           "name": "caller",
-          "type": "address"
+          "type": "address",
+          "desc": "Caller (this.txn.sender) on destination domain"
         },
         {
           "name": "sourceDomain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "The source domain this message originated from"
         },
         {
           "name": "nonce",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "The nonce unique to this message"
         },
         {
           "name": "sender",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "The sender of this message"
         },
         {
           "name": "messageBody",
-          "type": "byte[]"
+          "type": "byte[]",
+          "desc": "message body bytes"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a new message is received"
     },
     {
       "name": "MaxMessageBodySizeUpdated",
       "args": [
         {
           "name": "newMaxMessageBodySize",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "new maximum message body size, in bytes"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when max message body size is updated"
     }
   ]
 }
