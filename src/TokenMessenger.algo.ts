@@ -497,7 +497,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 			remoteDomain,
 			_messageBody._burnToken,
 			Address.fromBytes(_messageBody._mintRecipient),
-			extract_uint64(rawBytes(_messageBody._amount), 24)
+			extractUint64(rawBytes(_messageBody._amount), 24)
 		);
 
 		return true;

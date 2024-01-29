@@ -173,7 +173,7 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 
 		this._verifyAttestationSignatures(originalMessage, originalAttestation);
 
-		const message_start = extract_uint16(originalMessage, 0);
+		const message_start = extractUint16(originalMessage, 0);
 		const message_size = 116;
 		const _message = castBytes<Message>(substring3(originalMessage, message_start, message_start + message_size));
 
@@ -291,7 +291,7 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 		// Validate each signature in the attestation
 		this._verifyAttestationSignatures(message, attestation);
 
-		const message_start = extract_uint16(message, 0);
+		const message_start = extractUint16(message, 0);
 		const message_size = 116;
 		const _message = castBytes<Message>(substring3(message, message_start, message_start + message_size));
 
@@ -328,7 +328,7 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 
 		// Handle receive message
 		const handled = sendMethodCall<[uint32, bytes32, bytes], boolean>({
-			applicationID: Application.fromID(extract_uint64(_message._msgRecipient, 24)),
+			applicationID: Application.fromID(extractUint64(_message._msgRecipient, 24)),
 			name: 'handleReceiveMessage',
 			methodArgs: [
 				_message._msgSourceDomain,
