@@ -35,22 +35,18 @@ class TokenMinter extends Contract.extend(TokenController, Pausable) {
 
 	// ============ Events ============
 	/**
-	 * @notice Emitted when a local TokenMessenger is added
-	 * @param localTokenMessenger address of local TokenMessenger
-	 * @notice Emitted when a local TokenMessenger is added
+	 * Emitted when a local TokenMessenger is added
 	 */
-	// LocalTokenMessengerAddress(application)
 	LocalTokenMessengerAdded = new EventLogger<{
+		/** Address of local TokenMessenger */
 		localTokenMessenger: Application
 	}>();
 
 	/**
-	 * @notice Emitted when a local TokenMessenger is removed
-	 * @param localTokenMessenger address of local TokenMessenger
-	 * @notice Emitted when a local TokenMessenger is removed
+	 * Emitted when a local TokenMessenger is removed
 	 */
-	// LocalTokenMessengerRemoved(application)
 	LocalTokenMessengerRemoved = new EventLogger<{
+		/** Address of local TokenMessenger */
 		localTokenMessenger: Application
 	}>();
 
@@ -98,10 +94,10 @@ class TokenMinter extends Contract.extend(TokenController, Pausable) {
 	 * @return mintToken token minted.
 	 */
 	mint(
-		sourceDomain: uint<32>,
+		sourceDomain: uint32,
 		burnToken: bytes32,
 		to: Address,
-		amount: uint<64>
+		amount: uint64
 	): Asset {
 		this.whenNotPaused();
 		this.onlyLocalTokenMessenger();
@@ -127,7 +123,7 @@ class TokenMinter extends Contract.extend(TokenController, Pausable) {
 	 */
 	burn(
 		burnToken: Asset,
-		burnAmount: uint<64>
+		burnAmount: uint64
 	): void {
 		this.whenNotPaused();
 		this.onlyLocalTokenMessenger();
@@ -204,7 +200,7 @@ class TokenMinter extends Contract.extend(TokenController, Pausable) {
 	 * @return local token id
 	 */
 	getLocalToken(
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		remoteToken: bytes32
 	): Asset {
 		return this._getLocalToken(remoteDomain, remoteToken);

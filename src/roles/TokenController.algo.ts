@@ -29,7 +29,7 @@ export class TokenController extends Contract {
 	// ============ State Variables ============
 	// Supported burnable tokens on the local domain
 	// local token (address) => maximum burn amounts per message
-	burnLimitsPerMessage = BoxMap<Asset, uint<64>>();
+	burnLimitsPerMessage = BoxMap<Asset, uint64>();
 
 	// Supported mintable tokens on remote domains, mapped to their corresponding local token
 	// hash(remote domain & remote token bytes32 address) => local token (asset)
@@ -41,48 +41,44 @@ export class TokenController extends Contract {
 
 	// ============ Events ============
 	/**
-	 * @notice Emitted when a token pair is linked
-	 * @param localToken local token to support
-	 * @param remoteDomain remote domain
-	 * @param remoteToken token on `remoteDomain` corresponding to `localToken`
+	 * Emitted when a token pair is linked
 	 */
-	// TokenPairLinked(asset,uint32,bytes32)
 	TokenPairLinked = new EventLogger<{
+		/** Local token to support */
 		localToken: Asset,
-		remoteDomain: uint<32>,
+		/** Remote domain */
+		remoteDomain: uint32,
+		/** Token on `remoteDomain` corresponding to `localToken` */
 		remoteToken: bytes32
 	}>();
 
 	/**
-	 * @notice Emitted when a token pair is unlinked
-	 * @param localToken local token id
-	 * @param remoteDomain remote domain
-	 * @param remoteToken token on `remoteDomain` unlinked from `localToken`
+	 * Emitted when a token pair is unlinked
 	 */
-	// TokenPairUnlinked(asset,uint32,bytes32)
 	TokenPairUnlinked = new EventLogger<{
+		/** Local token id */
 		localToken: Asset,
-		remoteDomain: uint<32>,
+		/** Remote domain */
+		remoteDomain: uint32,
+		/** Token on `remoteDomain` unlinked from `localToken` */
 		remoteToken: bytes32
 	}>();
 
 	/**
-	 * @notice Emitted when a burn limit per message is set for a particular token
-	 * @param token local token id
-	 * @param burnLimitPerMessage burn limit per message for `token`
+	 * Emitted when a burn limit per message is set for a particular token
 	 */
-	// SetBurnLimitPerMessage(asset,uint64)
 	SetBurnLimitPerMessage = new EventLogger<{
+		/** Local token id */
 		token: Asset,
-		burnLimitPerMessage: uint<64>
+		/** Burn limit per message for `token` */
+		burnLimitPerMessage: uint64
 	}>();
 
 	/**
-	 * @notice Emitted when token controller is set
-	 * @param tokenController token controller address set
+	 * Emitted when token controller is set
 	 */
-	// SetTokenController(address)
 	SetTokenController = new EventLogger<{
+		/** Token controller address set */
 		tokenController: Address
 	}>();
 
@@ -108,9 +104,9 @@ export class TokenController extends Contract {
 	 */
 	protected onlyWithinBurnLimit(
 		token: Asset,
-		amount: uint<64>
+		amount: uint64
 	): void {
-		const _allowedBurnAmount: uint<64> = this.burnLimitsPerMessage(token).value;
+		const _allowedBurnAmount: uint64 = this.burnLimitsPerMessage(token).value;
 
 		assert(_allowedBurnAmount);
 		assert(amount <= _allowedBurnAmount);
@@ -140,7 +136,7 @@ export class TokenController extends Contract {
 	 */
 	linkTokenPair(
 		localToken: Asset,
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		remoteToken: bytes32
 	): void {
 		this.onlyTokenController();
@@ -181,7 +177,7 @@ export class TokenController extends Contract {
 	 */
 	unlinkTokenPair(
 		localToken: Asset,
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		remoteToken: bytes32
 	): void {
 		this.onlyTokenController()
@@ -215,7 +211,7 @@ export class TokenController extends Contract {
 	 */
 	setMaxBurnAmountPerMessage(
 		localToken: Asset,
-		burnLimitPerMessage: uint<64>
+		burnLimitPerMessage: uint64
 	): void {
 		this.onlyTokenController();
 
@@ -252,7 +248,7 @@ export class TokenController extends Contract {
 	 * @return Local asset id
 	 */
 	protected _getLocalToken(
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		remoteToken: bytes32
 	): Asset {
 		const _remoteTokensKey: bytes32 = this._hashRemoteDomainAndToken(
@@ -270,7 +266,7 @@ export class TokenController extends Contract {
 	 * @return keccak hash of packed remote domain and token
 	 */
 	protected _hashRemoteDomainAndToken(
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		remoteToken: bytes32
 	): bytes32 {
 		return keccak256(concat(rawBytes(remoteDomain), remoteToken)) as bytes32;

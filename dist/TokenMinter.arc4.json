@@ -37,18 +37,21 @@
           "args": [
             {
               "name": "localToken",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Local token to support"
             },
             {
               "name": "remoteDomain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "Remote domain"
             },
             {
               "name": "remoteToken",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "Token on `remoteDomain` corresponding to `localToken`"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a token pair is linked"
         }
       ]
     },
@@ -78,18 +81,21 @@
           "args": [
             {
               "name": "localToken",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Local token id"
             },
             {
               "name": "remoteDomain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "Remote domain"
             },
             {
               "name": "remoteToken",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "Token on `remoteDomain` unlinked from `localToken`"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a token pair is unlinked"
         }
       ]
     },
@@ -117,14 +123,16 @@
           "args": [
             {
               "name": "token",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Local token id"
             },
             {
               "name": "burnLimitPerMessage",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Burn limit per message for `token`"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a burn limit per message is set for a particular token"
         }
       ]
     },
@@ -348,10 +356,11 @@
           "args": [
             {
               "name": "localTokenMessenger",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Address of local TokenMessenger"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a local TokenMessenger is added"
         }
       ]
     },
@@ -368,10 +377,11 @@
           "args": [
             {
               "name": "localTokenMessenger",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Address of local TokenMessenger"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a local TokenMessenger is removed"
         }
       ]
     },
@@ -415,60 +425,69 @@
       "args": [
         {
           "name": "localToken",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Local token to support"
         },
         {
           "name": "remoteDomain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "Remote domain"
         },
         {
           "name": "remoteToken",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "Token on `remoteDomain` corresponding to `localToken`"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a token pair is linked"
     },
     {
       "name": "TokenPairUnlinked",
       "args": [
         {
           "name": "localToken",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Local token id"
         },
         {
           "name": "remoteDomain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "Remote domain"
         },
         {
           "name": "remoteToken",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "Token on `remoteDomain` unlinked from `localToken`"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a token pair is unlinked"
     },
     {
       "name": "SetBurnLimitPerMessage",
       "args": [
         {
           "name": "token",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Local token id"
         },
         {
           "name": "burnLimitPerMessage",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Burn limit per message for `token`"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a burn limit per message is set for a particular token"
     },
     {
       "name": "SetTokenController",
       "args": [
         {
           "name": "tokenController",
-          "type": "address"
+          "type": "address",
+          "desc": "Token controller address set"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when token controller is set"
     },
     {
       "name": "OwnershipTransferred",
@@ -523,20 +542,22 @@
       "args": [
         {
           "name": "localTokenMessenger",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Address of local TokenMessenger"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a local TokenMessenger is added"
     },
     {
       "name": "LocalTokenMessengerRemoved",
       "args": [
         {
           "name": "localTokenMessenger",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Address of local TokenMessenger"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a local TokenMessenger is removed"
     }
   ]
 }

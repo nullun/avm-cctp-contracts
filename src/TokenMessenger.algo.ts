@@ -34,92 +34,87 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	localMessageTransmitter = GlobalStateKey<Application>();
 
 	// Version of message body format
-	messageBodyVersion = GlobalStateKey<uint<32>>();
+	messageBodyVersion = GlobalStateKey<uint32>();
 
 	// Minter responsible for minting and burning tokens on the local domain
 	localMinter = GlobalStateKey<Application>();
 
 	// Valid TokenMessengers on remote domains
-	remoteTokenMessengers = BoxMap<uint<32>, bytes32>();
+	remoteTokenMessengers = BoxMap<uint32, bytes32>();
 
 
 	// ============ Events ============
 	/**
-	 * @notice Emitted when a DepositForBurn message is sent
-	 * @param nonce unique nonce reserved by message
-	 * @param burnToken address of token burnt on source domain
-	 * @param amount deposit amount
-	 * @param depositor address where deposit is transferred from
-	 * @param mintRecipient address receiving minted tokens on destination domain as bytes32
-	 * @param destinationDomain destination domain
-	 * @param destinationTokenMessenger address of TokenMessenger on destination domain as bytes32
-	 * @param destinationCaller authorized caller as bytes32 of receiveMessage() on destination domain, if not equal to bytes32(0).
-	 * If equal to bytes32(0), any address can call receiveMessage().
+	 * Emitted when a DepositForBurn message is sent
 	 */
-	// DepositForBurn(uint64,asset,uint256,address,bytes32,uint32,bytes32,bytes32)
 	DepositForBurn = new EventLogger<{
-		nonce: uint<64>,
+		/** Unique nonce reserved by message */
+		nonce: uint64,
+		/** Asset ID of token burnt on source domain */
 		burnToken: Asset,
-		amount: uint<256>,
+		/** Deposit amount */
+		amount: uint256,
+		/** Address where deposit is transferred from */
 		depositor: Address,
+		/** Address receiving minted tokens on destination domain as bytes32 */
 		mintRecipient: bytes32,
-		destinationDomain: uint<32>,
+		/** Destination domain */
+		destinationDomain: uint32,
+		/** Address of TokenMessenger on destination domain as bytes32 */
 		destinationTokenMessenger: bytes32,
+		/**
+		 * Authorized caller as bytes32 of receiveMessage() on destination
+		 * domain, if not equal to bytes32(0). If equal to bytes32(0), any
+		 * address can call receiveMessage().
+		 */
 		destinationCaller: bytes32
 	}>();
 
 	/**
-	 * @notice Emitted when tokens are minted
-	 * @param mintRecipient recipient address of minted tokens
-	 * @param amount amount of minted tokens
-	 * @param mintToken asset of minted token
+	 * Emitted when tokens are minted
 	 */
-	// MintAndWithdraw(address,uint256,asset)
 	MintAndWithdraw = new EventLogger<{
+		/** Recipient address of minted tokens */
 		mintRecipient: Address,
-		amount: uint<256>,
+		/** Amount of minted tokens */
+		amount: uint256,
+		/** Asset ID of minted token */
 		mintToken: Asset
 	}>();
 
 	/**
-	 * @notice Emitted when a remote TokenMessenger is added
-	 * @param domain remote domain
-	 * @param tokenMessenger TokenMessenger on remote domain
+	 * Emitted when a remote TokenMessenger is added
 	 */
-	// RemoteTokenMessengerAdded(uint32,bytes32)
 	RemoteTokenMessengerAdded = new EventLogger<{
-		domain: uint<32>,
+		/** Remote domain */
+		domain: uint32,
+		/** TokenMessenger on remote domain */
 		tokenMessenger: bytes32
 	}>();
 
 	/**
-	 * @notice Emitted when a remote TokenMessenger is removed
-	 * @param domain remote domain
-	 * @param tokenMessenger TokenMessenger on remote domain
+	 * Emitted when a remote TokenMessenger is removed
 	 */
-	// RemoteTokenMessengerRemoved(uint32,bytes32)
 	RemoteTokenMessengerRemoved = new EventLogger<{
-		domain: uint<32>,
+		/** Remote domain */
+		domain: uint32,
+		/** TokenMessenger on remote domain */
 		tokenMessenger: bytes32
 	}>();
 
 	/**
-	 * @notice Emitted when the local minter is added
-	 * @param localMinter address of local minter
-	 * @notice Emitted when the local minter is added
+	 * Emitted when the local minter is added
 	 */
-	// LocalMinterAddres(application)
 	LocalMinterAdded = new EventLogger<{
+		/** Address of local minter */
 		localMinter: Application
 	}>();
 
 	/**
-	 * @notice Emitted when the local minter is removed
-	 * @param localMinter address of local minter
-	 * @notice Emitted when the local minter is removed
+	 * Emitted when the local minter is removed
 	 */
-	// LocalMinterRemoved(application)
 	LocalMinterRemoved = new EventLogger<{
+		/** Address of local minter */
 		localMinter: Application
 	}>();
 
@@ -131,7 +126,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @param tokenMessenger The address of the TokenMessenger contract for the given remote domain
 	 */
 	private onlyRemoteTokenMessenger(
-		domain: uint<32>,
+		domain: uint32,
 		tokenMessenger: bytes32
 	): void {
 		assert(this.remoteTokenMessengers(domain).value === tokenMessenger);
@@ -168,13 +163,13 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @return nonce unique nonce reserved by message
 	 */
 	private _sendDepositForBurnMessage(
-		_destinationDomain: uint<32>,
+		_destinationDomain: uint32,
 		_destinationTokenMessenger: bytes32,
 		_destinationCaller: bytes32,
 		_burnMessage: bytes
-	): uint<64> {
+	): uint64 {
 		if (_destinationCaller === bzero(32) as bytes32) {
-			return sendMethodCall<[uint<32>, bytes32, bytes], uint<64>>({
+			return sendMethodCall<[uint32, bytes32, bytes], uint64>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessage',
 				methodArgs: [
@@ -184,7 +179,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 				]
 			});
 		} else {
-			return sendMethodCall<[uint<32>, bytes32, bytes32, bytes], uint<64>>({
+			return sendMethodCall<[uint32, bytes32, bytes32, bytes], uint64>({
 				applicationID: this.localMessageTransmitter.value,
 				name: 'sendMessageWithCaller',
 				methodArgs: [
@@ -203,7 +198,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @return _tokenMessenger The address of the TokenMessenger on `_domain` as bytes32
 	 */
 	private _getRemoteTokenMessenger(
-		_domain: uint<32>
+		_domain: uint32
 	): bytes32 {
 		const _tokenMessenger = this.remoteTokenMessengers(_domain).value;
 
@@ -224,11 +219,11 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 */
 	private _depositForBurn(
 		_axfer: AssetTransferTxn,
-		_destinationDomain: uint<32>,
+		_destinationDomain: uint32,
 		_mintRecipient: bytes32,
 		_burnToken: Asset,
 		_destinationCaller: bytes32
-	): uint<64> {
+	): uint64 {
 		assert(_axfer.assetAmount);
 		assert(_mintRecipient != bzero(32) as bytes32);
 
@@ -244,7 +239,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 		assert(_axfer.assetReceiver === _localMinter.address);
 
 		// Call to TokenMinter to "burn" asset.
-		sendMethodCall<[Asset, uint<64>], void>({
+		sendMethodCall<[Asset, uint64], void>({
 			applicationID: _localMinter,
 			name: 'burn',
 			methodArgs: [
@@ -255,14 +250,14 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 
 		// Format message body
 		const _burnMessage: BurnMessage = {
-			_version: this.messageBodyVersion.value as uint<32>,
+			_version: this.messageBodyVersion.value as uint32,
 			_burnToken: concat(bzero(32 - len(itob(_burnToken))), itob(_burnToken)) as bytes32,
 			_mintRecipient: _mintRecipient,
-			_amount: _axfer.assetAmount as uint<256>,
+			_amount: _axfer.assetAmount as uint256,
 			_messageSender: rawBytes(this.txn.sender) as bytes32
 		};
 
-		const _nonceReserved: uint<64> = this._sendDepositForBurnMessage(
+		const _nonceReserved: uint64 = this._sendDepositForBurnMessage(
 			_destinationDomain,
 			_destinationTokenMessenger,
 			_destinationCaller,
@@ -272,7 +267,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 		this.DepositForBurn.log({
 			nonce: _nonceReserved,
 			burnToken: _burnToken,
-			amount: _axfer.assetAmount as uint<256>,
+			amount: _axfer.assetAmount as uint256,
 			depositor: this.txn.sender,
 			mintRecipient: _mintRecipient,
 			destinationDomain: _destinationDomain,
@@ -293,12 +288,12 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 */
 	private _mintAndWithdraw(
 		_tokenMinter: Application,
-		_remoteDomain: uint<32>,
+		_remoteDomain: uint32,
 		_burnToken: bytes32,
 		_mintRecipient: Address,
-		_amount: uint<64>
+		_amount: uint64
 	): void {
-		const _mintToken = sendMethodCall<[uint<32>, bytes32, Address, uint<64>], Asset>({
+		const _mintToken = sendMethodCall<[uint32, bytes32, Address, uint64], Asset>({
 			applicationID: _tokenMinter,
 			name: 'mint',
 			methodArgs: [
@@ -311,7 +306,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 
 		this.MintAndWithdraw.log({
 			mintRecipient: _mintRecipient,
-			amount: <uint<256>>_amount,
+			amount: <uint256>_amount,
 			mintToken: _mintToken
 		});
 	}
@@ -336,10 +331,10 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 */
 	depositForBurn(
 		axfer: AssetTransferTxn,
-		destinationDomain: uint<32>,
+		destinationDomain: uint32,
 		mintRecipient: bytes32,
 		burnToken: Asset
-	): uint<64> {
+	): uint64 {
 		return this._depositForBurn(
 			axfer,
 			destinationDomain,
@@ -375,11 +370,11 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 */
 	depositForBurnWithCaller(
 		axfer: AssetTransferTxn,
-		destinationDomain: uint<32>,
+		destinationDomain: uint32,
 		mintRecipient: bytes32,
 		burnToken: Asset,
 		destinationCaller: bytes32
-	): uint<64> {
+	): uint64 {
 		// Destination caller must be nonzero. To allow any destination caller, use depositForBurn().
 		assert(destinationCaller !== bzero(32) as bytes32);
 
@@ -474,18 +469,13 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @return success Bool, true if successful.
 	 */
 	handleReceiveMessage(
-		remoteDomain: uint<32>,
+		remoteDomain: uint32,
 		sender: bytes32,
 		messageBody: bytes
 	): boolean {
 		this.onlyLocalMessageTransmitter();
 		this.onlyRemoteTokenMessenger(remoteDomain, sender);
 
-		/*
-		const message_body_start = extract_uint16(messageBody, 0) + 2;
-		const message_body_size = extract_uint16(messageBody, 2);
-		const _messageBody = castBytes<BurnMessage>(substring3(messageBody, message_body_start, message_body_start + message_body_size));
-		*/
 		const _messageBody = castBytes<BurnMessage>(messageBody);
 
 		assert(_messageBody._version === this.messageBodyVersion.value);
@@ -510,7 +500,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @param tokenMessenger Address of remote TokenMessenger as bytes32.
 	 */
 	addRemoteTokenMessenger(
-		domain: uint<32>,
+		domain: uint32,
 		tokenMessenger: bytes32
 	): void {
 		this.onlyOwner();
@@ -532,7 +522,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	 * @param domain Domain of remote TokenMessenger
 	 */
 	removeRemoteTokenMessenger(
-		domain: uint<32>
+		domain: uint32
 	): void {
 		this.onlyOwner();
 
@@ -594,7 +584,7 @@ class TokenMessenger extends Contract.extend(Ownable2Step) {
 	@allow.create('NoOp')
 	deploy(
 		_messageTransmitter: Application,
-		_messageBodyVersion: uint<32>
+		_messageBodyVersion: uint32
 	): void {
 		assert(_messageTransmitter);
 

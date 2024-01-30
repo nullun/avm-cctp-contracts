@@ -197,14 +197,16 @@
           "args": [
             {
               "name": "previousAttesterManager",
-              "type": "address"
+              "type": "address",
+              "desc": "Representing the address of the previous attester manager"
             },
             {
               "name": "newAttesterManager",
-              "type": "address"
+              "type": "address",
+              "desc": "Representing the address of the new attester manager"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when attester manager address is updated"
         }
       ]
     },
@@ -241,14 +243,16 @@
           "args": [
             {
               "name": "oldSignatureThreshold",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Old signature threshold"
             },
             {
               "name": "newSignatureThreshold",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "New signature threshold"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when threshold number of attestations (m in m/n multisig) is updated"
         }
       ]
     },
@@ -492,28 +496,32 @@
       "args": [
         {
           "name": "previousAttesterManager",
-          "type": "address"
+          "type": "address",
+          "desc": "Representing the address of the previous attester manager"
         },
         {
           "name": "newAttesterManager",
-          "type": "address"
+          "type": "address",
+          "desc": "Representing the address of the new attester manager"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when attester manager address is updated"
     },
     {
       "name": "SignatureThresholdUpdated",
       "args": [
         {
           "name": "oldSignatureThreshold",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Old signature threshold"
         },
         {
           "name": "newSignatureThreshold",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "New signature threshold"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when threshold number of attestations (m in m/n multisig) is updated"
     },
     {
       "name": "MessageSent",

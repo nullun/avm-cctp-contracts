@@ -404,7 +404,6 @@ class MessageTransmitter extends Contract.extend(Pausable, Attestable) {
 			_msgSender: _sender,
 			_msgRecipient: _recipient,
 			_msgDestinationCaller: _destinationCaller,
-			//_msgRawBody: _messageBody
 		};
 
         // Emit MessageSent event

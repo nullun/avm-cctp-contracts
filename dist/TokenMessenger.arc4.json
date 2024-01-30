@@ -176,38 +176,46 @@
           "args": [
             {
               "name": "nonce",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Unique nonce reserved by message"
             },
             {
               "name": "burnToken",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Asset ID of token burnt on source domain"
             },
             {
               "name": "amount",
-              "type": "uint256"
+              "type": "uint256",
+              "desc": "Deposit amount"
             },
             {
               "name": "depositor",
-              "type": "address"
+              "type": "address",
+              "desc": "Address where deposit is transferred from"
             },
             {
               "name": "mintRecipient",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "Address receiving minted tokens on destination domain as bytes32"
             },
             {
               "name": "destinationDomain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "Destination domain"
             },
             {
               "name": "destinationTokenMessenger",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "Address of TokenMessenger on destination domain as bytes32"
             },
             {
               "name": "destinationCaller",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "Authorized caller as bytes32 of receiveMessage() on destination\ndomain, if not equal to bytes32(0). If equal to bytes32(0), any\naddress can call receiveMessage()."
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a DepositForBurn message is sent"
         }
       ]
     },
@@ -259,14 +267,16 @@
           "args": [
             {
               "name": "domain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "Remote domain"
             },
             {
               "name": "tokenMessenger",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "TokenMessenger on remote domain"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a remote TokenMessenger is added"
         }
       ]
     },
@@ -289,14 +299,16 @@
           "args": [
             {
               "name": "domain",
-              "type": "uint32"
+              "type": "uint32",
+              "desc": "Remote domain"
             },
             {
               "name": "tokenMessenger",
-              "type": "byte[32]"
+              "type": "byte[32]",
+              "desc": "TokenMessenger on remote domain"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when a remote TokenMessenger is removed"
         }
       ]
     },
@@ -319,10 +331,11 @@
           "args": [
             {
               "name": "localMinter",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Address of local minter"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when the local minter is added"
         }
       ]
     },
@@ -339,10 +352,11 @@
           "args": [
             {
               "name": "localMinter",
-              "type": "uint64"
+              "type": "uint64",
+              "desc": "Address of local minter"
             }
           ],
-          "desc": ""
+          "desc": "Emitted when the local minter is removed"
         }
       ]
     },
@@ -399,104 +413,121 @@
       "args": [
         {
           "name": "nonce",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Unique nonce reserved by message"
         },
         {
           "name": "burnToken",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Asset ID of token burnt on source domain"
         },
         {
           "name": "amount",
-          "type": "uint256"
+          "type": "uint256",
+          "desc": "Deposit amount"
         },
         {
           "name": "depositor",
-          "type": "address"
+          "type": "address",
+          "desc": "Address where deposit is transferred from"
         },
         {
           "name": "mintRecipient",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "Address receiving minted tokens on destination domain as bytes32"
         },
         {
           "name": "destinationDomain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "Destination domain"
         },
         {
           "name": "destinationTokenMessenger",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "Address of TokenMessenger on destination domain as bytes32"
         },
         {
           "name": "destinationCaller",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "Authorized caller as bytes32 of receiveMessage() on destination\ndomain, if not equal to bytes32(0). If equal to bytes32(0), any\naddress can call receiveMessage()."
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a DepositForBurn message is sent"
     },
     {
       "name": "MintAndWithdraw",
       "args": [
         {
           "name": "mintRecipient",
-          "type": "address"
+          "type": "address",
+          "desc": "Recipient address of minted tokens"
         },
         {
           "name": "amount",
-          "type": "uint256"
+          "type": "uint256",
+          "desc": "Amount of minted tokens"
         },
         {
           "name": "mintToken",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Asset ID of minted token"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when tokens are minted"
     },
     {
       "name": "RemoteTokenMessengerAdded",
       "args": [
         {
           "name": "domain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "Remote domain"
         },
         {
           "name": "tokenMessenger",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "TokenMessenger on remote domain"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a remote TokenMessenger is added"
     },
     {
       "name": "RemoteTokenMessengerRemoved",
       "args": [
         {
           "name": "domain",
-          "type": "uint32"
+          "type": "uint32",
+          "desc": "Remote domain"
         },
         {
           "name": "tokenMessenger",
-          "type": "byte[32]"
+          "type": "byte[32]",
+          "desc": "TokenMessenger on remote domain"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when a remote TokenMessenger is removed"
     },
     {
       "name": "LocalMinterAdded",
       "args": [
         {
           "name": "localMinter",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Address of local minter"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when the local minter is added"
     },
     {
       "name": "LocalMinterRemoved",
       "args": [
         {
           "name": "localMinter",
-          "type": "uint64"
+          "type": "uint64",
+          "desc": "Address of local minter"
         }
       ],
-      "desc": ""
+      "desc": "Emitted when the local minter is removed"
     }
   ]
 }

@@ -27,7 +27,7 @@ import { Ownable2Step } from './Ownable2Step.algo';
 type Signature = {
 	r: bytes32;
 	s: bytes32;
-	v: uint<8>;
+	v: uint8;
 };
 
 // 65-byte ECDSA signature: v (1) + r (32) + s (32)
@@ -38,7 +38,7 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 
 	// ============ State Variables ============
 	// number of signatures from distinct attesters required for a message to be received (m in m/n multisig)
-	signatureThreshold = GlobalStateKey<uint<64>>();
+	signatureThreshold = GlobalStateKey<uint64>();
 
 	// Attester Manager of the application
 	attesterManager = GlobalStateKey<Address>();
@@ -49,29 +49,23 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 
 	// ============ Events ============
 	/**
-	 * @dev Emitted when attester manager address is updated
-	 * @param previousAttesterManager representing the address of the previous attester manager
-	 * @param newAttesterManager representing the address of the new attester manager
+	 * Emitted when attester manager address is updated
 	 */
-	// AttesterManagerUpdated(address,address)
 	AttesterManagerUpdated = new EventLogger<{
-		/* previousAttesterManager */
+		/** Representing the address of the previous attester manager */
 		previousAttesterManager: Address,
-		/* newAttesterManager */
+		/** Representing the address of the new attester manager */
 		newAttesterManager: Address
 	}>();
 
 	/**
-	 * @notice Emitted when threshold number of attestations (m in m/n multisig) is updated
-	 * @param oldSignatureThreshold old signature threshold
-	 * @param newSignatureThreshold new signature threshold
+	 * Emitted when threshold number of attestations (m in m/n multisig) is updated
 	 */
-	// SignatureThresholdUpdated(uint64,uint64)
 	SignatureThresholdUpdated = new EventLogger<{
-		/* oldSignatureThreshold */
-		oldSignatureThreshold: uint<64>,
-		/* newSignatureThreshold */
-		newSignatureThreshold: uint<64>
+		/** Old signature threshold */
+		oldSignatureThreshold: uint64,
+		/** New signature threshold */
+		newSignatureThreshold: uint64
 	}>();
 
 
@@ -123,7 +117,7 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 	 * @param attester attester to retrieve index of
 	 * @return index of given `attester`, else fails
 	 */
-	offsetOfEnabledAttester(attester: bytes32): uint<64> {
+	offsetOfEnabledAttester(attester: bytes32): uint64 {
 		const boxSize = this.enabledAttesters.size;
 		for (let i = 2; i < boxSize; i = i + 32) {
 			if (attester == this.enabledAttesters.value[i]) {
@@ -196,14 +190,14 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 	 * of enabled attesters.
 	 * @param newSignatureThreshold new signature threshold
 	 */
-	setSignatureThreshold(newSignatureThreshold: uint<64>): void {
+	setSignatureThreshold(newSignatureThreshold: uint64): void {
 		this.onlyAttesterManager();
 
 		assert(newSignatureThreshold);
 		assert(newSignatureThreshold <= this.getNumEnabledAttesters());
 		assert(newSignatureThreshold != this.signatureThreshold.value);
 
-		const _oldSignatureThreshold: uint<64> = this.signatureThreshold.value;
+		const _oldSignatureThreshold: uint64 = this.signatureThreshold.value;
 		this.signatureThreshold.value = newSignatureThreshold;
 
 		this.SignatureThresholdUpdated.log({ oldSignatureThreshold: _oldSignatureThreshold, newSignatureThreshold: this.signatureThreshold.value });
