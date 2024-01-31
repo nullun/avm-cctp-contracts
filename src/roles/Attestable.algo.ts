@@ -251,7 +251,7 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 		const s = btobigint(_signature.s);
 		const v = _signature.v - 27;
 
-		const res = ecdsa_pk_recover("Secp256k1", _digest, <uint64>v, r, s);
+		const res = ecdsaPkRecover("Secp256k1", _digest, <uint64>v, r, s);
 		const addr = bzero(12) + substring3(keccak256(rawBytes(res)), 12, 32) as bytes32;
 
 		return addr
@@ -289,11 +289,7 @@ export class Attestable extends Contract.extend(Ownable2Step) {
 
 			// Need at least 2000 Opcode budget
 			while (globals.opcodeBudget < 2500) {
-				sendAppCall({
-					onCompletion: OnCompletion.DeleteApplication,
-					approvalProgram: hex("0x0a8101"),
-					clearStateProgram: hex("0x0a8101")
-				});
+				increaseOpcodeBudget();
 			}
 
 			// TODO: Fix _recoverAttesterSignature
